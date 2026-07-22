@@ -1,0 +1,1467 @@
+{
+  "overview": {
+    "tables_overview": {
+      "transactions": {
+        "row_count": 203958,
+        "col_count": 13,
+        "memory_usage_mb": 53.814,
+        "columns": {
+          "date": "str",
+          "store_id": "str",
+          "category": "str",
+          "total_transactions": "int64",
+          "cash_transactions": "float64",
+          "card_transactions": "int64",
+          "amount_total": "float64",
+          "amount_cash": "float64",
+          "amount_card": "float64",
+          "units_sold": "float64",
+          "avg_ticket": "float64",
+          "has_promotion": "int64",
+          "replenishment_signal": "float64"
+        },
+        "cardinality": {
+          "date": 425,
+          "store_id": 80,
+          "category": 6,
+          "total_transactions": 4269,
+          "cash_transactions": 2465,
+          "card_transactions": 2384,
+          "amount_total": 203217,
+          "amount_cash": 190320,
+          "amount_card": 202761,
+          "units_sold": 7121,
+          "avg_ticket": 76570,
+          "has_promotion": 2,
+          "replenishment_signal": 18734
+        }
+      },
+      "stores": {
+        "row_count": 80,
+        "col_count": 9,
+        "memory_usage_mb": 0.021,
+        "columns": {
+          "store_id": "str",
+          "store_format": "str",
+          "region": "str",
+          "size_sqm": "int64",
+          "num_checkouts": "int64",
+          "opening_year": "int64",
+          "socioeconomic_level": "str",
+          "has_pharmacy": "bool",
+          "has_fuel_station": "bool"
+        },
+        "cardinality": {
+          "store_id": 80,
+          "store_format": 3,
+          "region": 5,
+          "size_sqm": 80,
+          "num_checkouts": 30,
+          "opening_year": 10,
+          "socioeconomic_level": 4,
+          "has_pharmacy": 2,
+          "has_fuel_station": 2
+        }
+      },
+      "calendar": {
+        "row_count": 425,
+        "col_count": 15,
+        "memory_usage_mb": 0.114,
+        "columns": {
+          "date": "str",
+          "day_of_week": "int64",
+          "day_name": "str",
+          "week_of_year": "int64",
+          "month": "int64",
+          "year": "int64",
+          "quarter": "int64",
+          "season": "str",
+          "is_holiday": "bool",
+          "holiday_name": "str",
+          "is_payday": "bool",
+          "is_weekend": "bool",
+          "is_navidad_season": "bool",
+          "is_buen_fin": "bool",
+          "is_semana_santa": "bool"
+        },
+        "cardinality": {
+          "date": 425,
+          "day_of_week": 7,
+          "day_name": 7,
+          "week_of_year": 52,
+          "month": 12,
+          "year": 2,
+          "quarter": 4,
+          "season": 4,
+          "is_holiday": 2,
+          "holiday_name": 15,
+          "is_payday": 2,
+          "is_weekend": 2,
+          "is_navidad_season": 2,
+          "is_buen_fin": 2,
+          "is_semana_santa": 2
+        }
+      }
+    },
+    "referential_integrity": {
+      "unique_stores_in_transactions": 80,
+      "unique_stores_in_stores_csv": 80,
+      "orphan_stores_in_transactions_count": 0,
+      "orphan_stores_in_transactions": [],
+      "stores_without_transactions_count": 0,
+      "stores_without_transactions": [],
+      "referential_match_pct": 100.0
+    },
+    "temporal_continuity": {
+      "global_start_date": "2023-01-01",
+      "global_end_date": "2024-02-29",
+      "total_expected_days": 425,
+      "stores_count": 80,
+      "total_missing_store_days": 7,
+      "per_store_temporal_summary": {
+        "STR_001": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_002": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_003": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_004": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_005": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_006": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_007": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_008": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_009": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_010": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_011": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_012": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_013": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_014": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_015": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_016": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_017": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_018": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_019": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_020": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_021": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_022": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_023": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_024": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_025": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_026": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_027": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_028": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_029": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_030": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_031": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_032": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_033": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_034": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_035": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_036": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_037": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_038": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_039": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_040": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_041": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_042": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_043": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_044": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_045": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 423,
+          "expected_days": 425,
+          "missing_days": 2,
+          "continuity_pct": 99.53
+        },
+        "STR_046": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_047": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_048": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_049": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_050": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_051": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_052": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_053": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_054": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_055": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 422,
+          "expected_days": 425,
+          "missing_days": 3,
+          "continuity_pct": 99.29
+        },
+        "STR_056": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_057": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_058": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_059": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_060": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_061": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_062": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_063": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_064": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 423,
+          "expected_days": 425,
+          "missing_days": 2,
+          "continuity_pct": 99.53
+        },
+        "STR_065": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_066": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_067": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_068": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_069": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_070": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_071": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_072": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_073": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_074": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_075": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_076": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_077": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_078": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_079": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        },
+        "STR_080": {
+          "min_date": "2023-01-01",
+          "max_date": "2024-02-29",
+          "active_days": 425,
+          "expected_days": 425,
+          "missing_days": 0,
+          "continuity_pct": 100.0
+        }
+      }
+    }
+  },
+  "quality": {
+    "missingness": {
+      "transactions": {
+        "total_rows": 203958,
+        "columns": {
+          "date": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "store_id": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "category": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "total_transactions": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "cash_transactions": {
+            "null_count": 12123,
+            "null_percentage": 5.9439
+          },
+          "card_transactions": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "amount_total": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "amount_cash": {
+            "null_count": 12123,
+            "null_percentage": 5.9439
+          },
+          "amount_card": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "units_sold": {
+            "null_count": 6118,
+            "null_percentage": 2.9996
+          },
+          "avg_ticket": {
+            "null_count": 4874,
+            "null_percentage": 2.3897
+          },
+          "has_promotion": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "replenishment_signal": {
+            "null_count": 960,
+            "null_percentage": 0.4707
+          }
+        },
+        "total_null_cells": 36198,
+        "total_cells": 2651454,
+        "global_null_percentage": 1.3652
+      },
+      "stores": {
+        "total_rows": 80,
+        "columns": {
+          "store_id": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "store_format": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "region": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "size_sqm": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "num_checkouts": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "opening_year": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "socioeconomic_level": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "has_pharmacy": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "has_fuel_station": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          }
+        },
+        "total_null_cells": 0,
+        "total_cells": 720,
+        "global_null_percentage": 0.0
+      },
+      "calendar": {
+        "total_rows": 425,
+        "columns": {
+          "date": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "day_of_week": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "day_name": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "week_of_year": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "month": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "year": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "quarter": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "season": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "is_holiday": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "holiday_name": {
+            "null_count": 407,
+            "null_percentage": 95.7647
+          },
+          "is_payday": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "is_weekend": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "is_navidad_season": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "is_buen_fin": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          },
+          "is_semana_santa": {
+            "null_count": 0,
+            "null_percentage": 0.0
+          }
+        },
+        "total_null_cells": 407,
+        "total_cells": 6375,
+        "global_null_percentage": 6.3843
+      }
+    },
+    "grouped_missingness_transactions": {
+      "cash_transactions": {
+        "Abarrotes": 2037,
+        "Bebidas": 1984,
+        "Cuidado_Personal": 1988,
+        "Electronica": 2071,
+        "Hogar": 2009,
+        "Ropa": 2034
+      },
+      "amount_cash": {
+        "Abarrotes": 2037,
+        "Bebidas": 1984,
+        "Cuidado_Personal": 1988,
+        "Electronica": 2071,
+        "Hogar": 2009,
+        "Ropa": 2034
+      },
+      "units_sold": {
+        "Abarrotes": 1029,
+        "Bebidas": 1005,
+        "Cuidado_Personal": 1001,
+        "Electronica": 1045,
+        "Hogar": 1029,
+        "Ropa": 1009
+      },
+      "avg_ticket": {
+        "Abarrotes": 819,
+        "Bebidas": 815,
+        "Cuidado_Personal": 791,
+        "Electronica": 865,
+        "Hogar": 773,
+        "Ropa": 811
+      },
+      "replenishment_signal": {
+        "Abarrotes": 160,
+        "Bebidas": 160,
+        "Cuidado_Personal": 160,
+        "Electronica": 160,
+        "Hogar": 160,
+        "Ropa": 160
+      }
+    },
+    "exact_duplicates": {
+      "transactions": 0,
+      "stores": 0,
+      "calendar": 0
+    },
+    "constant_columns": {
+      "transactions": {
+        "constant": [],
+        "near_constant_99pct": []
+      },
+      "stores": {
+        "constant": [],
+        "near_constant_99pct": []
+      },
+      "calendar": {
+        "constant": [],
+        "near_constant_99pct": [
+          "is_buen_fin",
+          "is_semana_santa"
+        ]
+      }
+    },
+    "iqr_outliers": {
+      "amount_total": {
+        "q25": 78798.17,
+        "q75": 213323.91,
+        "iqr": 134525.74,
+        "lower_bound": -122990.44,
+        "upper_bound": 415112.52,
+        "outlier_count": 10895,
+        "outlier_pct": 5.34
+      },
+      "units_sold": {
+        "q25": 418.0,
+        "q75": 1487.0,
+        "iqr": 1069.0,
+        "lower_bound": -1185.5,
+        "upper_bound": 3090.5,
+        "outlier_count": 12646,
+        "outlier_pct": 6.39
+      },
+      "avg_ticket": {
+        "q25": 182.44,
+        "q75": 534.14,
+        "iqr": 351.7,
+        "lower_bound": -345.11,
+        "upper_bound": 1061.69,
+        "outlier_count": 10103,
+        "outlier_pct": 5.07
+      },
+      "amount_cash": {
+        "q25": 30519.27,
+        "q75": 86819.46,
+        "iqr": 56300.19,
+        "lower_bound": -53931.02,
+        "upper_bound": 171269.76,
+        "outlier_count": 12870,
+        "outlier_pct": 6.71
+      },
+      "amount_card": {
+        "q25": 44898.69,
+        "q75": 124418.91,
+        "iqr": 79520.22,
+        "lower_bound": -74381.64,
+        "upper_bound": 243699.23,
+        "outlier_count": 10950,
+        "outlier_pct": 5.37
+      }
+    },
+    "isolation_forest": {
+      "contamination_rate": 0.01,
+      "total_anomalies_detected": 2040,
+      "anomaly_pct": 1.0,
+      "classified_valid_commercial_event_anomalies": 1569,
+      "classified_probable_pos_or_operational_errors": 474
+    }
+  },
+  "profiling": {
+    "descriptive_stats": {
+      "total_transactions": {
+        "count": 203958,
+        "mean": 613.51,
+        "std": 631.77,
+        "min": 14.0,
+        "p5": 96.0,
+        "p25": 228.0,
+        "median_p50": 424.0,
+        "p75": 783.0,
+        "p95": 1730.0,
+        "p99": 2884.43,
+        "max": 15194.0,
+        "skewness": 4.1967,
+        "kurtosis": 39.0194
+      },
+      "cash_transactions": {
+        "count": 191835,
+        "mean": 273.98,
+        "std": 323.69,
+        "min": 3.0,
+        "p5": 26.0,
+        "p25": 77.0,
+        "median_p50": 169.0,
+        "p75": 352.0,
+        "p95": 861.0,
+        "p99": 1440.66,
+        "max": 8387.0,
+        "skewness": 4.1551,
+        "kurtosis": 37.5905
+      },
+      "card_transactions": {
+        "count": 203958,
+        "mean": 313.1,
+        "std": 286.56,
+        "min": 11.0,
+        "p5": 63.0,
+        "p25": 136.0,
+        "median_p50": 234.0,
+        "p75": 399.0,
+        "p95": 808.0,
+        "p99": 1333.0,
+        "max": 6827.0,
+        "skewness": 3.9937,
+        "kurtosis": 35.0755
+      },
+      "amount_total": {
+        "count": 203958,
+        "mean": 170581.26,
+        "std": 150445.65,
+        "min": 6922.32,
+        "p5": 41567.91,
+        "p25": 78798.17,
+        "median_p50": 129965.23,
+        "p75": 213323.91,
+        "p95": 424963.03,
+        "p99": 722050.27,
+        "max": 4050995.63,
+        "skewness": 4.2848,
+        "kurtosis": 42.2618
+      },
+      "amount_cash": {
+        "count": 191835,
+        "mean": 71623.69,
+        "std": 71687.13,
+        "min": 2721.28,
+        "p5": 15855.4,
+        "p25": 30519.27,
+        "median_p50": 51462.28,
+        "p75": 86819.46,
+        "p95": 193978.1,
+        "p99": 346405.84,
+        "max": 2294517.17,
+        "skewness": 4.9998,
+        "kurtosis": 59.1305
+      },
+      "amount_card": {
+        "count": 203958,
+        "mean": 98908.2,
+        "std": 88072.57,
+        "min": 4201.04,
+        "p5": 22700.26,
+        "p25": 44898.69,
+        "median_p50": 74877.42,
+        "p75": 124418.91,
+        "p95": 249441.2,
+        "p99": 419023.8,
+        "max": 2269315.38,
+        "skewness": 4.1298,
+        "kurtosis": 38.1501
+      },
+      "units_sold": {
+        "count": 197840,
+        "mean": 1175.41,
+        "std": 1264.96,
+        "min": 22.0,
+        "p5": 171.0,
+        "p25": 418.0,
+        "median_p50": 793.0,
+        "p75": 1487.0,
+        "p95": 3402.0,
+        "p99": 5803.61,
+        "max": 31936.0,
+        "skewness": 4.4321,
+        "kurtosis": 43.6694
+      },
+      "avg_ticket": {
+        "count": 199084,
+        "mean": 411.76,
+        "std": 303.64,
+        "min": 69.86,
+        "p5": 128.39,
+        "p25": 182.44,
+        "median_p50": 297.03,
+        "p75": 534.14,
+        "p95": 1064.89,
+        "p99": 1332.35,
+        "max": 1931.74,
+        "skewness": 1.3503,
+        "kurtosis": 1.1811
+      },
+      "replenishment_signal": {
+        "count": 202998,
+        "mean": 614.45,
+        "std": 538.1,
+        "min": 34.67,
+        "p5": 110.0,
+        "p25": 249.86,
+        "median_p50": 447.57,
+        "p75": 809.57,
+        "p95": 1653.43,
+        "p99": 2511.43,
+        "max": 7064.0,
+        "skewness": 2.3804,
+        "kurtosis": 9.9298
+      }
+    },
+    "cash_vs_card": {
+      "total_amount_total_mxn": 34791412195.45,
+      "total_amount_cash_mxn": 13739930288.06,
+      "total_amount_card_mxn": 20173118081.81,
+      "cash_amount_share_pct": 39.49,
+      "card_amount_share_pct": 57.98,
+      "total_cash_transactions": 52559667,
+      "total_card_transactions": 63859388,
+      "cash_tx_share_pct": 42.0,
+      "card_tx_share_pct": 51.03
+    },
+    "format_performance": {
+      "Bodega": {
+        "store_count": 35,
+        "total_sales_mxn": 15170416302.69,
+        "mean_daily_sales_mxn": 170033.81,
+        "median_daily_sales_mxn": 141560.98,
+        "mean_avg_ticket_mxn": 405.41,
+        "median_avg_ticket_mxn": 295.67,
+        "mean_units_sold": 1186.85
+      },
+      "Express": {
+        "store_count": 25,
+        "total_sales_mxn": 5176433529.91,
+        "mean_daily_sales_mxn": 81214.24,
+        "median_daily_sales_mxn": 69475.54,
+        "mean_avg_ticket_mxn": 415.65,
+        "median_avg_ticket_mxn": 297.68,
+        "mean_units_sold": 564.9
+      },
+      "Supercenter": {
+        "store_count": 20,
+        "total_sales_mxn": 14444562362.85,
+        "mean_daily_sales_mxn": 283226.71,
+        "median_daily_sales_mxn": 235246.18,
+        "mean_avg_ticket_mxn": 418.03,
+        "median_avg_ticket_mxn": 299.16,
+        "mean_units_sold": 1919.64
+      }
+    },
+    "socioeconomic_performance": {
+      "A/B": {
+        "store_count": 5,
+        "total_sales_mxn": 3153359625.58,
+        "mean_daily_sales_mxn": 247322.32,
+        "mean_avg_ticket_mxn": 578.85,
+        "cash_share_pct": 39.51
+      },
+      "B": {
+        "store_count": 21,
+        "total_sales_mxn": 10665529094.5,
+        "mean_daily_sales_mxn": 199214.19,
+        "mean_avg_ticket_mxn": 479.78,
+        "cash_share_pct": 39.52
+      },
+      "C": {
+        "store_count": 27,
+        "total_sales_mxn": 9539436855.73,
+        "mean_daily_sales_mxn": 138590.14,
+        "mean_avg_ticket_mxn": 339.97,
+        "cash_share_pct": 39.42
+      },
+      "C+": {
+        "store_count": 27,
+        "total_sales_mxn": 11433086619.64,
+        "mean_daily_sales_mxn": 166086.85,
+        "mean_avg_ticket_mxn": 399.66,
+        "cash_share_pct": 39.53
+      }
+    },
+    "promotion_impact": {
+      "without_promotion": {
+        "record_count": 163213,
+        "record_pct": 80.02,
+        "mean_amount_total": 170566.53,
+        "median_amount_total": 129899.48,
+        "mean_units_sold": 1174.58,
+        "mean_avg_ticket": 411.94
+      },
+      "with_promotion": {
+        "record_count": 40745,
+        "record_pct": 19.98,
+        "mean_amount_total": 170640.26,
+        "median_amount_total": 130237.33,
+        "mean_units_sold": 1178.76,
+        "mean_avg_ticket": 411.05
+      },
+      "sales_lift_pct": 0.04
+    },
+    "replenishment_signal_analysis": {
+      "null_count": 960,
+      "null_pct": 0.47,
+      "correlation_with_amount_total": 0.5574,
+      "correlation_with_units_sold": 0.8139,
+      "last_7_days_null_pct": 0.0
+    }
+  },
+  "features": {
+    "categorical_encodings": {
+      "category": {
+        "unique_values": [
+          "Abarrotes",
+          "Bebidas",
+          "Cuidado_Personal",
+          "Electronica",
+          "Hogar",
+          "Ropa"
+        ],
+        "cardinality": 6,
+        "recommended_encoding": "One-Hot Encoding (Baja cardinalidad = 6)"
+      },
+      "region": {
+        "unique_values": [
+          "Norte",
+          "Occidente",
+          "Oriente",
+          "Sur",
+          "Centro"
+        ],
+        "cardinality": 5,
+        "recommended_encoding": "One-Hot Encoding (Baja cardinalidad = 5)"
+      },
+      "socioeconomic_level": {
+        "unique_values": [
+          "B",
+          "C+",
+          "C",
+          "A/B"
+        ],
+        "cardinality": 4,
+        "recommended_encoding": "Ordinal Encoding (Jerarquía explícita: C < C+ < B < A/B)"
+      },
+      "store_format": {
+        "unique_values": [
+          "Supercenter",
+          "Bodega",
+          "Express"
+        ],
+        "cardinality": 3,
+        "recommended_encoding": "One-Hot Encoding (Formato de tienda = 3)"
+      }
+    },
+    "imputation_strategies": {
+      "cash_transactions_and_amount_cash": {
+        "null_pct": 5.94,
+        "cause": "Fallas de conectividad / caídas de punto de venta (POS)",
+        "strategy": "Imputación mediante modelo de proporción histórica (Cash/Total ratio por tienda-categoría) o interpolación temporal regional."
+      },
+      "units_sold_and_avg_ticket": {
+        "null_pct": 3.0,
+        "cause": "Error de transmisión de datos en línea de caja",
+        "strategy": "Recalcular `avg_ticket` = `amount_total` / `total_transactions` donde `total_transactions` > 0. Imputar `units_sold` mediante `amount_total` / `precio_unitario_promedio_categoria`."
+      },
+      "replenishment_signal": {
+        "null_pct": 0.47,
+        "cause": "Latencia o corte en la ventana final del periodo de reposición",
+        "strategy": "Forward fill (ffill) por tienda-categoría o imputación por promedio móvil de 7 días."
+      }
+    },
+    "derived_variables": [
+      {
+        "name": "cash_ratio_amount",
+        "formula": "amount_cash / amount_total",
+        "justification": "Captura la preferencia de pago por efectivo frente a tarjeta por tienda/región."
+      },
+      {
+        "name": "sales_lag_7d & sales_lag_14d",
+        "formula": "shift(7) / shift(14) en amount_total por store_id y category",
+        "justification": "Captura estacionalidad semanal y quincenal de patrones de compra."
+      },
+      {
+        "name": "rolling_mean_7d & rolling_std_7d",
+        "formula": "Promedio y desviación estándar móvil de 7 días",
+        "justification": "Suaviza volatilidad diaria y detecta tendencias operativas recientes."
+      },
+      {
+        "name": "is_payday_window",
+        "formula": "Flag 1 si date coincide con quincena (15 o fin de mes) o días +- 1",
+        "justification": "Aumenta la capacidad predictiva ante picos sistemáticos de liquidez."
+      }
+    ]
+  },
+  "ml_readiness": {
+    "data_leakage_risks": [
+      {
+        "feature": "replenishment_signal",
+        "risk_level": "ALTO",
+        "explanation": "La variable replenishment_signal es calculada internamente con base en la demanda observada contemporánea. Utilizarla como predictor contemporáneo de amount_total produce data leakage.",
+        "mitigation": "Utilizar únicamente lags pasados (t-1, t-7) de replenishment_signal."
+      },
+      {
+        "feature": "cash_transactions / card_transactions / amount_cash / amount_card / avg_ticket",
+        "risk_level": "ALTO",
+        "explanation": "Estas variables son resultados contemporáneos de la venta del día. En un modelo de pronóstico de demanda previo a la apertura del día, estas variables no están disponibles.",
+        "mitigation": "Utilizar únicamente agregados pasados o excluir del feature set de predicción diaria anticipada."
+      }
+    ],
+    "high_multicollinearity_pairs": [
+      {
+        "var1": "total_transactions",
+        "var2": "cash_transactions",
+        "correlation": 0.9746,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "total_transactions",
+        "var2": "card_transactions",
+        "correlation": 0.97,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "total_transactions",
+        "var2": "amount_cash",
+        "correlation": 0.8562,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "total_transactions",
+        "var2": "units_sold",
+        "correlation": 0.9449,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "cash_transactions",
+        "var2": "card_transactions",
+        "correlation": 0.9218,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "cash_transactions",
+        "var2": "amount_cash",
+        "correlation": 0.8508,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "cash_transactions",
+        "var2": "units_sold",
+        "correlation": 0.9368,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "card_transactions",
+        "var2": "units_sold",
+        "correlation": 0.9295,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "amount_total",
+        "var2": "amount_cash",
+        "correlation": 0.9262,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      },
+      {
+        "var1": "amount_total",
+        "var2": "amount_card",
+        "correlation": 0.9516,
+        "risk": "Multicolinealidad alta (> 0.85)"
+      }
+    ],
+    "temporal_sparsity": {
+      "unique_stores": 80,
+      "unique_categories": 6,
+      "total_calendar_days": 425,
+      "theoretical_total_grid_rows": 204000,
+      "actual_transaction_rows": 203958,
+      "missing_grid_rows": 42,
+      "temporal_sparsity_pct": 0.02,
+      "impact": "Existen combinaciones tienda-categoría-día faltantes que deben reindexarse con valor 0 para evitar sesgos en modelos de series de tiempo."
+    }
+  }
+}

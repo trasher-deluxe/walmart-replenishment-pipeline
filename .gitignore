@@ -26,6 +26,8 @@ wheels/
 # Heavy/generated artifacts
 outputs/*
 !outputs/.gitkeep
+!outputs/*.json
+!outputs/*.md
 *.pkl
 *.joblib
 *.pt
