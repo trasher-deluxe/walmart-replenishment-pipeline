@@ -33,3 +33,6 @@ outputs/*
 *.pt
 *.h5
 AUDIT_PROMPT_CLAUDE.md
+
+# Knowledge graph artifacts (generado con graphify, regenerable con /graphify)
+graphify-out/
