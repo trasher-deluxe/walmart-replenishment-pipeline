@@ -120,10 +120,3 @@ Se usaron dos agentes de IA en fases distintas, con divulgación completa:
 6. **MLOps** (§5): tracking + Model Registry con MLflow y gate de CI/CD champion-challenger.
 
 Todo el código fue validado mediante ejecución automatizada y auditoría fáctica con 0 alucinaciones (`outputs/audit_log.md`).
-
-### Herramientas de Apoyo al Flujo de Trabajo
-
-Además del agente principal, el desarrollo se apoyó en dos herramientas que dejan claro **de qué lado masca la iguana** 🦎 — cero over-engineering y trazabilidad total:
-
-- **graphify** (`/graphify`): convierte todo el repositorio (código, docs y figuras del EDA) en un **grafo de conocimiento** navegable con detección de comunidades y auditoría honesta de relaciones (EXTRACTED / INFERRED / AMBIGUOUS). Se usó para mapear las dependencias reales entre el pipeline de datos, la ingeniería de features y los agentes de EDA, y para responder preguntas sobre la arquitectura sin releer archivo por archivo. Sus salidas viven en `graphify-out/` (regenerables, por eso están en `.gitignore`).
-- **ponytail** (`/ponytail`): guardián anti-sobreingeniería. Fuerza la solución más simple que funciona — biblioteca estándar antes que dependencias, una línea antes que cincuenta, y cuestiona si el código siquiera necesita existir (YAGNI). Se aplicó para mantener el pipeline limpio y sin abstracciones especulativas.
