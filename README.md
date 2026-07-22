@@ -81,6 +81,24 @@ Evaluación **gap-aware**: forecast a **7 días** con features *gap-safe* (sin `
 - **Model Registry:** el mejor modelo se registra como `walmart-replenishment`; alias `@staging` siempre, `@production` solo si supera al baseline.
 - **CI (`.github/workflows/ci.yml`):** `ruff check` + `python src/pipeline.py` + `pytest` (gate champion/challenger) en cada PR.
 
+### Inferencia con el modelo registrado
+
+Tras correr `src/pipeline.py` (que registra el modelo), carga el candidato `@staging` desde el
+Model Registry local y predice sobre una matriz de features **gap-safe**:
+
+```python
+import mlflow
+
+mlflow.set_tracking_uri("file:mlruns")
+model = mlflow.pyfunc.load_model("models:/walmart-replenishment@staging")
+
+# X_new: DataFrame con las columnas de outputs/feature_cols.json (estáticas + lags >= 7d)
+preds = model.predict(X_new)  # replenishment_signal estimada para la ventana ciega
+```
+
+> El alias `@production` solo existe cuando el modelo supera al baseline (hoy no — ver §4); en
+> producción se cargaría `models:/walmart-replenishment@production` con el mismo código.
+
 Detalle completo en `PROCESS.md §5`.
 
 ---
