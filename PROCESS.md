@@ -103,6 +103,12 @@ En cada PR y push a `main`/`master`: `uv sync` → `ruff check` → `python src/
 
 **Gate champion/challenger** (`tests/test_model_gate.py`): `assert savings_best_model_vs_naive_mxn >= 0`, marcado `@pytest.mark.xfail(strict=True)`. Como el modelo actual **sabidamente** pierde vs el baseline (§4), es una limitación conocida y documentada: CI queda **verde** con un `xfailed` explícito en vez de un rojo de "roto". El día que las features multi-step hagan ganar al modelo, el test hará **XPASS** y `strict=True` lo vuelve rojo — señal para quitar el marcador y volverlo un `assert` duro. Es decir, rojo solo significa "el gate está obsoleto", nunca "el modelo se degradó". El guardrail real que impide promover a `@production` un modelo peor que el baseline vive en `src/pipeline.py` (`passes_baseline_gate`), independiente de este test.
 
+### 5.4 Política de artefactos versionados
+
+Regla general (buena práctica MLOps): **los artefactos generados no se versionan** — `outputs/ml_results.json`, `mlruns/`, `graphify-out/` y `outputs/draft_analysis.md` están en `.gitignore` y los regenera el pipeline.
+
+**Excepción deliberada:** `reports/EDA_Report.{md,html}`, `figures/*.png` y `outputs/stats_raw.json` **sí** se versionan aunque también son generados. En un pipeline productivo normalmente se gitignoran (nunca deben subirse), pero aquí, al tratarse de un **entregable de evaluación**, se commitean a propósito para que un revisor vea los resultados del EDA y el reporte final sin necesidad de ejecutar nada. `stats_raw.json` además es la fuente de verdad que consume el fact-checker.
+
 ---
 
 ## 6. Asistencia de Herramientas de IA
