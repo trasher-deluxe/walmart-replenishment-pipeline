@@ -1,0 +1,52 @@
+{
+  "dataset_summary": {
+    "total_rows": 204000,
+    "train_rows": 160320,
+    "val_rows": 29760,
+    "holdout_rows": 13920
+  },
+  "model_performance": {
+    "lightgbm": {
+      "wape": 0.0938,
+      "rmse": 222.94,
+      "financial_impact_mxn": {
+        "overstock_units": 1049488.9265437776,
+        "stockout_units": 1180197.0796141173,
+        "overstock_cost_mxn": 23613500.85,
+        "stockout_cost_mxn": 53108868.58,
+        "total_financial_loss_mxn": 76722369.43,
+        "estimated_savings_vs_baseline_mxn": 34525066.24
+      }
+    },
+    "xgboost": {
+      "wape": 0.0807,
+      "rmse": 218.3,
+      "financial_impact_mxn": {
+        "overstock_units": 1132003.1581459045,
+        "stockout_units": 786061.8861618042,
+        "overstock_cost_mxn": 25470071.06,
+        "stockout_cost_mxn": 35372784.88,
+        "total_financial_loss_mxn": 60842855.94,
+        "estimated_savings_vs_baseline_mxn": 27379285.17
+      }
+    }
+  },
+  "top_10_feature_importances": {
+    "replenishment_signal_lag_1d": 1226.0,
+    "is_buen_fin": 318.0,
+    "days_to_next_payday": 313.0,
+    "replenishment_signal_lag_28d": 220.0,
+    "replenishment_signal_lag_14d": 217.0,
+    "is_payday_window": 67.0,
+    "units_sold_roll_std_7d": 47.0,
+    "replenishment_signal_lag_7d": 46.0,
+    "units_sold_lag_7d": 43.0,
+    "units_sold_roll_mean_14d": 42.0
+  },
+  "holdout_predictions_summary": {
+    "predicted_records_count": 13884,
+    "mean_predicted_signal": 532.75,
+    "min_predicted_signal": 110.96,
+    "max_predicted_signal": 2421.98
+  }
+}
