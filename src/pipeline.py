@@ -198,12 +198,12 @@ def _run_ml_pipeline(run) -> dict:
     print("\n📋 [Paso 8] Registrando modelos en MLflow Model Registry...")
     lgb_signature = infer_signature(X_val, val_preds_lgb)
     lgb_model_info = mlflow.lightgbm.log_model(
-        lgb_forecaster.model, artifact_path="model_lightgbm",
+        lgb_forecaster.model, name="model_lightgbm",
         signature=lgb_signature, input_example=X_val.head(3), serialization_format="pickle"
     )
     xgb_signature = infer_signature(X_val, val_preds_xgb)
     xgb_model_info = mlflow.xgboost.log_model(
-        xgb_forecaster.model, artifact_path="model_xgboost",
+        xgb_forecaster.model, name="model_xgboost",
         signature=xgb_signature, input_example=X_val.head(3)
     )
 
