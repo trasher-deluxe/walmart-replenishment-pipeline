@@ -19,7 +19,8 @@ Requirements (fast, synthetic where possible — no full 204k run):
 3. `tests/test_metrics.py`:
    - WAPE/RMSE on known inputs; `business_impact_mxn` splits overstock (15%) vs stockout (30%)
      correctly (a stockout of size k costs 2× the equal overstock).
-4. Keep the champion/challenger gate (`tests/test_model_gate.py`, xfail while the model loses).
+4. Keep the champion/challenger gate (`tests/test_model_gate.py`): a hard assert that the production
+   model beats the naive (green today — AutoETS wins).
 5. Config: `[tool.pytest.ini_options] pythonpath = ["."]` in `pyproject.toml` so `src` imports.
 
-Verify: `uv run pytest -q` (all pass, gate xfailed) and `uv run ruff check tests/`.
+Verify: `uv run pytest -q` (all pass) and `uv run ruff check tests/`.

@@ -115,9 +115,11 @@ Cada corrida de `run_ml_pipeline()` se envuelve en `mlflow.start_run()` bajo el 
 - **Artifacts:** `ml_results.json`, las 5 figuras del EDA, `feature_cols.json`, feature importance del mejor LightGBM.
 
 ### 5.2 Model Registry
-Ambos modelos (LightGBM y XGBoost) se loguean como artifacts de la corrida con firma (`infer_signature`) y `input_example`. El que gana en pérdida financiera de VALIDATION se registra en el Model Registry como **`walmart-replenishment`**:
+Los GBM tabulares (LightGBM/XGBoost) se loguean como artifacts de la corrida para trazabilidad de la
+investigación. El modelo de **producción**, **AutoETS**, se envuelve como `mlflow.pyfunc` y se registra
+como **`walmart-replenishment`**:
 - Alias **`@staging`**: siempre apunta a la versión más reciente registrada.
-- Alias **`@production`**: solo se mueve si el modelo **supera al baseline seasonal-naive** (mismo criterio que el gate de CI, §5.3). Hoy no se mueve — el modelo actual pierde contra el baseline (§4).
+- Alias **`@production`**: solo se mueve si el modelo **supera al baseline seasonal-naive** (mismo criterio que el gate de CI, §5.3). Hoy **sí** se mueve — AutoETS supera al baseline por ~7 pts WAPE (§4).
 
 **Nota técnica — por qué `mlflow-skinny` y no `mlflow`:** al 2026-07-21, incluso el release más reciente de `mlflow` (3.14.0) fija `pandas<3`, incompatible con `pandas>=3.0.3` de este proyecto. `mlflow-skinny` no fija pandas y expone la misma API de tracking/registry usada aquí (`mlflow`, `mlflow.lightgbm`, `mlflow.xgboost`, `MlflowClient`). Los modelos se serializan con `serialization_format="pickle"` en vez del default `"skops"` para no sumar una dependencia extra solo por eso.
 
@@ -147,7 +149,7 @@ Se usaron dos agentes de IA en fases distintas, con divulgación completa:
 
 **Claude Code** (Anthropic, Opus 4.8) — auditoría y endurecimiento posterior:
 4. **Auditoría crítica** del repo: detectó y corrigió una fuga de datos en la imputación (medianas ahora train-only) y una métrica de ahorro inventada (factor `×0.45`, eliminada).
-5. **Rediseño de la evaluación** al escenario real (forecast gap-aware a 7 días + baseline seasonal-naive), lo que reveló el **hallazgo honesto** del §4 (el modelo aún no supera al baseline).
+5. **Rediseño de la evaluación** al escenario real (forecast gap-aware a 7 días + baseline seasonal-naive) e integración del forecaster de **producción AutoETS**, que supera al baseline por ~7 pts WAPE (§4).
 6. **MLOps** (§5): tracking + Model Registry con MLflow y gate de CI/CD champion-challenger.
 
 Todo el código fue validado mediante ejecución automatizada y auditoría fáctica con 0 alucinaciones (`outputs/audit_log.md`).

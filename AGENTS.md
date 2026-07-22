@@ -31,7 +31,8 @@ uv run ruff check .              # lint (debe pasar limpio)
 
 - `src/data_processing.py` — carga, grilla cartesiana (204k filas), imputación POS. `merge_master_dataset(train_end=...)`.
 - `src/features.py` — lags, rolling, ratios, target encoders. Punto de entrada `build_features_pipeline`.
-- `src/models.py` — `DemandForecaster` (wrapper LightGBM/XGBoost).
+- `src/models.py` — `DemandForecaster` (wrapper LightGBM/XGBoost, investigación tabular).
+- `src/forecasting.py` — **AutoETS** (statsforecast), el forecaster de **producción** que supera al baseline (`evaluate_production`, `fit_production`).
 - `src/metrics.py` — `wape`, `rmse`, `business_impact_mxn`.
 - `src/pipeline.py` — orquestador ML end-to-end + MLflow. Constantes fuente-de-verdad: `TRAIN_END`, `VAL_*`, `HOLDOUT_*`, `GAP_HORIZON`.
 - `eda/` — pipeline EDA de 9 agentes en 4 fases (ver `agents/1_eda_multiagent.md`).
@@ -48,11 +49,13 @@ uv run ruff check .              # lint (debe pasar limpio)
 2. **Evaluación gap-aware.** El caso real es un hueco multi-día; el modelo solo usa features
    **gap-safe** (estáticas + lags ≥ `GAP_HORIZON`), nunca `lag_1`, rolling ni ratios
    contemporáneos. Baseline honesto: seasonal-naive `lag-7`.
-3. **Honestidad sobre métricas.** Nada de números inventados ni factores arbitrarios. Hoy el
-   modelo **pierde** contra el baseline (documentado en `PROCESS.md §4`); se reporta tal cual. Un
-   resultado negativo auditable > una métrica inflada.
-4. **MLOps.** Tracking + Model Registry con MLflow (`mlruns/`, local). `@production` solo si el
-   modelo supera al baseline (`passes_baseline_gate`). El gate de CI es `xfail(strict=True)`.
+3. **Honestidad sobre métricas.** Nada de números inventados ni factores arbitrarios. El GBM tabular
+   **pierde** contra el baseline (los árboles no extrapolan); el modelo de producción **AutoETS lo
+   supera** por ~7 pts WAPE (`PROCESS.md §4`). Se reporta tal cual — el criterio de model selection
+   fue el que resolvió, no inflar una métrica.
+4. **MLOps.** Tracking + Model Registry con MLflow (`mlruns/`, local). El modelo de producción es
+   **AutoETS**; `@production` solo si supera al baseline (`passes_baseline_gate`). El gate de CI es un
+   `assert` duro y hoy está en **verde** (AutoETS gana).
 5. **Política de artefactos.** Los generados no se versionan (`outputs/ml_results.json`, `mlruns/`,
    `graphify-out/`, `outputs/draft_analysis.md`) — **excepto** `reports/`, `figures/` y
    `stats_raw.json`, commiteados a propósito para el revisor (ver `PROCESS.md §5.4`).

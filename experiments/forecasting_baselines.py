@@ -4,14 +4,15 @@ The AWS Forecast / GCP Vertex Forecasting approach in miniature: fit statistical
 the 480 (store x category) series and evaluate 7-day-ahead (the gap-safe horizon) with
 rolling-origin cross-validation on the VALIDATION window (Dec 2023 - Jan 2024).
 
-Run: uv sync --group experiments && uv run python experiments/forecasting_baselines.py
+Run: uv sync && uv run python experiments/forecasting_baselines.py
 
 Fast trend+seasonality models (AutoETS, DynamicOptimizedTheta) run on the full fleet; AutoARIMA
 (architecturally similar but much slower) runs on a deterministic sample for a data point.
 
-Conclusion (see PROCESS.md §4): none beat SeasonalNaive here — the target's variation beyond
-"last week's level" is noise, and the Dec-Jan holiday regime is absent from training (train ends
-2023-11-30). Model choice is not the bottleneck; data is.
+Conclusion (see PROCESS.md §4): AutoETS and Theta BEAT the seasonal-naive by ~7 WAPE points
+(AutoETS ~16.0% vs ~23.3%), and AutoARIMA also beats it on the sample. The tabular GBM could not —
+trees don't extrapolate — so the limit was the model PARADIGM, not the data. AutoETS is now the
+production forecaster (`src/forecasting.py`), registered and promoted to @production.
 """
 
 import os

@@ -29,4 +29,8 @@ HONESTY RULE: report the real result even if the model loses to the baseline. An
 negative result beats an inflated metric. Do NOT reintroduce `lag_1`/rolling to "win" — that would
 break the gap-safe scenario the business actually faces.
 
+NOTE: here the tabular GBM loses to the naive (trees can't extrapolate). The production forecaster
+is **AutoETS** (`src/forecasting.py`) — a native time-series model that beats the baseline. Keep the
+GBM as documented investigation; ship ETS.
+
 Verify with `uv run python src/pipeline.py` and `uv run pytest tests/test_temporal_split.py -q`.

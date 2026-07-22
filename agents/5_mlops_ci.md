@@ -24,9 +24,9 @@ Requirements:
 4. CI (`.github/workflows/ci.yml`): on PR/push → `uv sync` → `ruff check` → `python src/pipeline.py`
    → `pytest` → upload `ml_results.json`.
 
-5. Champion/challenger gate (`tests/test_model_gate.py`): asserts `savings_best_model_vs_naive_mxn
-   >= 0`. Mark it `xfail(strict=True)` while the model knowingly loses (documented limitation): CI
-   stays green with an explicit `xfailed`, and only turns red on an unexpected XPASS (prompt to
-   promote the gate to a hard assert). Never rubber-stamp a worse-than-baseline model.
+5. Champion/challenger gate (`tests/test_model_gate.py`): a hard `assert
+   savings_best_model_vs_naive_mxn >= 0` on the production model. It is green today — the production
+   forecaster (AutoETS) beats the seasonal-naive. If a future run promoted a worse-than-baseline
+   model, the gate goes red and blocks the merge; the same criterion controls the `@production` alias.
 
 6. Do NOT version generated artifacts (`mlruns/`, `outputs/ml_results.json`) — gitignore them.
