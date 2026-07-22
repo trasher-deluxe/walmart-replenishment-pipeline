@@ -25,14 +25,23 @@ from src.features import (
 from src.models import DemandForecaster
 from src.metrics import wape, rmse, business_impact_mxn
 
+# Chronological split boundaries (single source of truth)
+TRAIN_END = "2023-11-30"
+VAL_START, VAL_END = "2023-12-01", "2024-01-31"
+HOLDOUT_START, HOLDOUT_END = "2024-02-01", "2024-02-29"
+
+# Length of the month-end inventory-blindness window (consecutive days with null signal).
+# Drives which features are "gap-safe" and the seasonal-naive baseline horizon.
+GAP_HORIZON = 7
+
 def run_ml_pipeline() -> dict:
     print("=" * 60)
     print("🤖 EJECUTANDO PIPELINE ML (GOOGLE PROFESSIONAL ML ENGINEER)")
     print("=" * 60)
-    
-    # 1. Load Master Dataset
+
+    # 1. Load Master Dataset (imputation medians fitted ONLY on the train window)
     print("\n📦 [Paso 1] Cargando y construyendo Master Dataset...")
-    df_master = merge_master_dataset()
+    df_master = merge_master_dataset(train_end=TRAIN_END)
     print(f"   ✓ Master Dataset cargado: {df_master.shape[0]:,} filas x {df_master.shape[1]} columnas")
     
     # 2. Build Feature Engineering Pipeline
@@ -44,9 +53,9 @@ def run_ml_pipeline() -> dict:
     print("\n📅 [Paso 3] Aplicando División Temporal Estricta (Train / Validation / Holdout)...")
     
     # Temporal thresholds
-    train_mask = (df_featured["date"] >= "2023-01-01") & (df_featured["date"] <= "2023-11-30")
-    val_mask = (df_featured["date"] >= "2023-12-01") & (df_featured["date"] <= "2024-01-31")
-    holdout_mask = (df_featured["date"] >= "2024-02-01") & (df_featured["date"] <= "2024-02-29")
+    train_mask = (df_featured["date"] >= "2023-01-01") & (df_featured["date"] <= TRAIN_END)
+    val_mask = (df_featured["date"] >= VAL_START) & (df_featured["date"] <= VAL_END)
+    holdout_mask = (df_featured["date"] >= HOLDOUT_START) & (df_featured["date"] <= HOLDOUT_END)
     
     df_train = df_featured[train_mask].copy()
     df_val = df_featured[val_mask].copy()
@@ -64,19 +73,23 @@ def run_ml_pipeline() -> dict:
     df_val = transform_target_encoders(df_val, target_encoders)
     df_holdout = transform_target_encoders(df_holdout, target_encoders)
     
-    # 5. Define Feature Matrix X and Target y
-    feature_cols = [
-        "sales_per_sqm", "sales_per_checkout", "cash_ratio_roll_30d",
+    # 5. Define Feature Matrix X and Target y — GAP-SAFE features only.
+    #    Business scenario: `replenishment_signal` is null for a stretch of consecutive days
+    #    (month-end inventory blindness). A model is only useful there if every feature it uses
+    #    is known >= GAP_HORIZON days before the target day. So we exclude:
+    #      - lag_1 and rolling/ratio features (they need data inside the blind window),
+    #    and keep static store/calendar features + lags of >= GAP_HORIZON days.
+    static_cols = [
         "is_payday_window", "days_to_next_payday", "is_month_start", "is_month_end",
         "category_target_enc", "store_format_target_enc", "socioeconomic_level_ord",
         "size_sqm", "num_checkouts", "is_holiday", "is_payday", "is_weekend",
         "is_buen_fin", "is_navidad_season"
     ]
-    
-    # Add lag and rolling feature names and deduplicate while preserving order
-    lag_roll_cols = [c for c in df_train.columns if "_lag_" in c or "_roll_" in c]
-    feature_cols.extend(lag_roll_cols)
-    feature_cols = list(dict.fromkeys(feature_cols))
+    gap_safe_lags = [
+        c for c in df_train.columns
+        if "_lag_" in c and int(c.split("_lag_")[1].rstrip("d")) >= GAP_HORIZON
+    ]
+    feature_cols = list(dict.fromkeys(static_cols + gap_safe_lags))
     
     # Filter rows with complete features and valid target in Train and Val
     train_clean = df_train.dropna(subset=feature_cols + ["replenishment_signal"])
@@ -109,9 +122,22 @@ def run_ml_pipeline() -> dict:
     wape_xgb = wape(y_val, val_preds_xgb)
     rmse_xgb = rmse(y_val, val_preds_xgb)
     impact_xgb = business_impact_mxn(y_val, val_preds_xgb)
-    
+
+    # Seasonal-naive baseline: value one week ago (lag-7). This is the FAIR baseline for the
+    # gapped scenario — lag-1 (yesterday) is unavailable when the signal is null for days, so
+    # comparing against it would be dishonest. lag-7 survives a <=7-day blind window.
+    val_preds_naive = val_clean["replenishment_signal_lag_7d"]
+    wape_naive = wape(y_val, val_preds_naive)
+    impact_naive = business_impact_mxn(y_val, val_preds_naive)
+
+    # Real savings = baseline loss - best model loss (no invented factor).
+    best_model_loss = min(impact_lgb["total_financial_loss_mxn"], impact_xgb["total_financial_loss_mxn"])
+    savings_vs_naive_mxn = round(impact_naive["total_financial_loss_mxn"] - best_model_loss, 2)
+
+    print(f"   📉 Baseline (seasonal-naive lag-7) -> WAPE: {wape_naive:.4f} ({wape_naive*100:.2f}%) | Pérdida: ${impact_naive['total_financial_loss_mxn']:,.2f} MXN")
     print(f"   🏆 LightGBM -> WAPE: {wape_lgb:.4f} ({wape_lgb*100:.2f}%) | RMSE: {rmse_lgb:.2f} | Pérdida Financiera Estimada: ${impact_lgb['total_financial_loss_mxn']:,.2f} MXN")
     print(f"   ⚡ XGBoost  -> WAPE: {wape_xgb:.4f} ({wape_xgb*100:.2f}%) | RMSE: {rmse_xgb:.2f} | Pérdida Financiera Estimada: ${impact_xgb['total_financial_loss_mxn']:,.2f} MXN")
+    print(f"   💰 Ahorro real del mejor modelo vs baseline naive: ${savings_vs_naive_mxn:,.2f} MXN")
     
     # 8. Feature Importances
     fi_lgb = lgb_forecaster.feature_importance().head(10).to_dict()
@@ -130,7 +156,17 @@ def run_ml_pipeline() -> dict:
             "val_rows": int(len(df_val)),
             "holdout_rows": int(len(df_holdout))
         },
+        "evaluation_setup": {
+            "task": f"{GAP_HORIZON}-day-ahead forecast (gap-safe features only)",
+            "gap_horizon_days": GAP_HORIZON,
+            "baseline": "seasonal-naive (lag-7)"
+        },
         "model_performance": {
+            "baseline_seasonal_naive_lag7": {
+                "wape": float(round(wape_naive, 4)),
+                "financial_impact_mxn": impact_naive
+            },
+            "savings_best_model_vs_naive_mxn": float(savings_vs_naive_mxn),
             "lightgbm": {
                 "wape": float(round(wape_lgb, 4)),
                 "rmse": float(round(rmse_lgb, 2)),
