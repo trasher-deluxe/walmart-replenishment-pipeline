@@ -10,11 +10,19 @@ Follows Google Professional ML Engineer Certification standards:
 import json
 import os
 from pathlib import Path
-import pandas as pd
-import numpy as np
 
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# mlflow-skinny (not the full `mlflow` package): the latest mlflow still pins pandas<3,
+# incompatible with this project's pandas>=3.0.3. mlflow-skinny has no pandas pin and
+# provides the same tracking/registry API used here. See PROCESS.md §5.
+os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")  # opt into the local file backend (no tracking server)
+import mlflow
+import mlflow.lightgbm
+import mlflow.xgboost
+from mlflow import MlflowClient
+from mlflow.models import infer_signature
 
 from src.data_processing import merge_master_dataset
 from src.features import (
@@ -34,10 +42,31 @@ HOLDOUT_START, HOLDOUT_END = "2024-02-01", "2024-02-29"
 # Drives which features are "gap-safe" and the seasonal-naive baseline horizon.
 GAP_HORIZON = 7
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+MLFLOW_TRACKING_URI = f"file:{REPO_ROOT / 'mlruns'}"
+MLFLOW_EXPERIMENT = "walmart-replenishment"
+REGISTERED_MODEL_NAME = "walmart-replenishment"
+
 def run_ml_pipeline() -> dict:
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    mlflow.set_experiment(MLFLOW_EXPERIMENT)
+    with mlflow.start_run() as run:
+        return _run_ml_pipeline(run)
+
+
+def _run_ml_pipeline(run) -> dict:
     print("=" * 60)
     print("🤖 EJECUTANDO PIPELINE ML (GOOGLE PROFESSIONAL ML ENGINEER)")
     print("=" * 60)
+
+    mlflow.log_params({
+        "gap_horizon_days": GAP_HORIZON,
+        "train_end": TRAIN_END,
+        "val_start": VAL_START,
+        "val_end": VAL_END,
+        "holdout_start": HOLDOUT_START,
+        "holdout_end": HOLDOUT_END,
+    })
 
     # 1. Load Master Dataset (imputation medians fitted ONLY on the train window)
     print("\n📦 [Paso 1] Cargando y construyendo Master Dataset...")
@@ -90,7 +119,9 @@ def run_ml_pipeline() -> dict:
         if "_lag_" in c and int(c.split("_lag_")[1].rstrip("d")) >= GAP_HORIZON
     ]
     feature_cols = list(dict.fromkeys(static_cols + gap_safe_lags))
-    
+    mlflow.log_param("n_features", len(feature_cols))
+    mlflow.log_dict({"feature_cols": feature_cols}, "feature_cols.json")
+
     # Filter rows with complete features and valid target in Train and Val
     train_clean = df_train.dropna(subset=feature_cols + ["replenishment_signal"])
     val_clean = df_val.dropna(subset=feature_cols + ["replenishment_signal"])
@@ -105,9 +136,11 @@ def run_ml_pipeline() -> dict:
     
     lgb_forecaster = DemandForecaster(algorithm="lightgbm", params={"n_estimators": 400, "learning_rate": 0.03})
     lgb_forecaster.fit(X_train, y_train, eval_set=(X_val, y_val))
-    
+    mlflow.log_params({f"lgb_{k}": v for k, v in lgb_forecaster.params.items()})
+
     xgb_forecaster = DemandForecaster(algorithm="xgboost", params={"n_estimators": 300, "learning_rate": 0.03})
     xgb_forecaster.fit(X_train, y_train, eval_set=(X_val, y_val))
+    mlflow.log_params({f"xgb_{k}": v for k, v in xgb_forecaster.params.items()})
     
     # 7. Evaluate Model Performance on Validation Set
     print("\n📊 [Paso 6] Evaluando desempeño en VALIDATION Set...")
@@ -138,10 +171,56 @@ def run_ml_pipeline() -> dict:
     print(f"   🏆 LightGBM -> WAPE: {wape_lgb:.4f} ({wape_lgb*100:.2f}%) | RMSE: {rmse_lgb:.2f} | Pérdida Financiera Estimada: ${impact_lgb['total_financial_loss_mxn']:,.2f} MXN")
     print(f"   ⚡ XGBoost  -> WAPE: {wape_xgb:.4f} ({wape_xgb*100:.2f}%) | RMSE: {rmse_xgb:.2f} | Pérdida Financiera Estimada: ${impact_xgb['total_financial_loss_mxn']:,.2f} MXN")
     print(f"   💰 Ahorro real del mejor modelo vs baseline naive: ${savings_vs_naive_mxn:,.2f} MXN")
-    
+
+    mlflow.log_metrics({
+        "wape_lightgbm": wape_lgb,
+        "rmse_lightgbm": rmse_lgb,
+        "financial_loss_lightgbm_mxn": impact_lgb["total_financial_loss_mxn"],
+        "wape_xgboost": wape_xgb,
+        "rmse_xgboost": rmse_xgb,
+        "financial_loss_xgboost_mxn": impact_xgb["total_financial_loss_mxn"],
+        "wape_baseline_naive": wape_naive,
+        "financial_loss_baseline_naive_mxn": impact_naive["total_financial_loss_mxn"],
+        "savings_best_model_vs_naive_mxn": savings_vs_naive_mxn,
+    })
+    passes_baseline_gate = savings_vs_naive_mxn >= 0
+    mlflow.set_tag("passes_baseline_gate", str(passes_baseline_gate))
+
     # 8. Feature Importances
     fi_lgb = lgb_forecaster.feature_importance().head(10).to_dict()
-    
+    mlflow.log_dict({k: float(v) for k, v in fi_lgb.items()}, "feature_importance_lightgbm.json")
+
+    # 8b. Log & Register Models. Both candidates are logged as run artifacts for full
+    #     traceability; only the one that wins on VALIDATION loss is pushed to the
+    #     Model Registry. Alias "staging" always points at the latest candidate;
+    #     "production" only moves if it clears the champion/challenger gate (must not
+    #     lose to the seasonal-naive baseline — same check enforced by the CI test).
+    print("\n📋 [Paso 8] Registrando modelos en MLflow Model Registry...")
+    lgb_signature = infer_signature(X_val, val_preds_lgb)
+    lgb_model_info = mlflow.lightgbm.log_model(
+        lgb_forecaster.model, artifact_path="model_lightgbm",
+        signature=lgb_signature, input_example=X_val.head(3), serialization_format="pickle"
+    )
+    xgb_signature = infer_signature(X_val, val_preds_xgb)
+    xgb_model_info = mlflow.xgboost.log_model(
+        xgb_forecaster.model, artifact_path="model_xgboost",
+        signature=xgb_signature, input_example=X_val.head(3)
+    )
+
+    if impact_lgb["total_financial_loss_mxn"] <= impact_xgb["total_financial_loss_mxn"]:
+        best_algo, best_model_uri = "lightgbm", lgb_model_info.model_uri
+    else:
+        best_algo, best_model_uri = "xgboost", xgb_model_info.model_uri
+
+    client = MlflowClient()
+    registered_version = mlflow.register_model(best_model_uri, REGISTERED_MODEL_NAME).version
+    client.set_registered_model_alias(REGISTERED_MODEL_NAME, "staging", registered_version)
+    if passes_baseline_gate:
+        client.set_registered_model_alias(REGISTERED_MODEL_NAME, "production", registered_version)
+        print(f"   ✓ '{best_algo}' v{registered_version} registrado como '{REGISTERED_MODEL_NAME}' -> @staging, @production (supera al baseline)")
+    else:
+        print(f"   ✓ '{best_algo}' v{registered_version} registrado como '{REGISTERED_MODEL_NAME}' -> @staging únicamente (NO supera al baseline, @production sin mover)")
+
     # 9. Predict on Holdout / Blind Test Period (Feb 2024)
     print("\n🔮 [Paso 7] Realizando predicciones sobre HOLDOUT (Ceguera de Inventario - Feb 2024)...")
     holdout_clean = df_holdout.dropna(subset=feature_cols).copy()
@@ -184,19 +263,32 @@ def run_ml_pipeline() -> dict:
             "mean_predicted_signal": float(round(holdout_preds.mean(), 2)),
             "min_predicted_signal": float(round(holdout_preds.min(), 2)),
             "max_predicted_signal": float(round(holdout_preds.max(), 2))
+        },
+        "mlflow": {
+            "run_id": run.info.run_id,
+            "registered_model_name": REGISTERED_MODEL_NAME,
+            "registered_model_version": registered_version,
+            "registered_algorithm": best_algo,
+            "passes_baseline_gate": passes_baseline_gate
         }
     }
-    
+
     output_dir = Path(__file__).resolve().parent.parent / "outputs"
     os.makedirs(output_dir, exist_ok=True)
     out_file = output_dir / "ml_results.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
-        
-    print(f"\n============================================================")
+    mlflow.log_artifact(str(out_file))
+
+    figures_dir = REPO_ROOT / "figures"
+    if figures_dir.is_dir():
+        mlflow.log_artifacts(str(figures_dir), artifact_path="figures")
+
+    print("\n============================================================")
     print(f"✅ PIPELINE ML COMPLETADO Y GUARDADO EN '{out_file}'")
-    print(f"============================================================")
-    
+    print(f"   MLflow run: {run.info.run_id} (experiment '{MLFLOW_EXPERIMENT}')")
+    print("============================================================")
+
     return results
 
 if __name__ == "__main__":

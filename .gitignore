@@ -37,3 +37,6 @@ HANDOFF_MLFLOW.md
 
 # Knowledge graph artifacts (generado con graphify, regenerable con /graphify)
 graphify-out/
+
+# MLflow local tracking store (regenerable con `python src/pipeline.py`)
+mlruns/
