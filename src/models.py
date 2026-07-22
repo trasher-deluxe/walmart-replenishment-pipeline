@@ -40,7 +40,7 @@ class DemandForecaster:
                 X_val, y_val = eval_set
                 self.model.fit(
                     X, y,
-                    eval_X=X_val, eval_y=y_val,
+                    eval_set=[(X_val, y_val)],
                     callbacks=[lgb.early_stopping(stopping_rounds=30, verbose=False)]
                 )
             else:
