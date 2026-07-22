@@ -18,7 +18,6 @@ def build_final_reports(stats_raw_path: str, figures_dir: str = "figures", outpu
     ov = stats["overview"]
     qual = stats["quality"]
     prof = stats["profiling"]
-    feat = stats["features"]
     ml = stats["ml_readiness"]
     
     # Load Base64 images

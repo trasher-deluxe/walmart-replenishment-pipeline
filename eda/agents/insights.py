@@ -14,7 +14,6 @@ def generate_draft_analysis(stats_raw_path: str, output_path: str = "outputs/dra
     iqr = stats["quality"]["iqr_outliers"]
     iso = stats["quality"]["isolation_forest"]
     prof = stats["profiling"]
-    feat = stats["features"]
     ml = stats["ml_readiness"]
     
     draft_md = f"""# Borrador de Análisis Exploratorio de Datos (EDA)

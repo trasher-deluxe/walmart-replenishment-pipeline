@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from sklearn.ensemble import IsolationForest
 
 def analyze_quality(df_trans: pd.DataFrame, df_stores: pd.DataFrame, df_cal: pd.DataFrame) -> dict:

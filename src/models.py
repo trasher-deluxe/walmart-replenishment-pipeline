@@ -5,7 +5,6 @@ from typing import Literal
 import lightgbm as lgb
 import xgboost as xgb
 import pandas as pd
-import numpy as np
 
 @dataclass
 class DemandForecaster:

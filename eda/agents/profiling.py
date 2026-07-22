@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from scipy import stats
 
 def analyze_profiling(df_trans: pd.DataFrame, df_stores: pd.DataFrame, df_cal: pd.DataFrame) -> dict:
     """Compute descriptive statistics and core retail business metrics."""

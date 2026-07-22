@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 def analyze_ml_readiness(df_trans: pd.DataFrame, df_stores: pd.DataFrame, df_cal: pd.DataFrame) -> dict:
     """Evaluate dataset readiness for predictive modeling (Demand Forecast & Replenishment)."""

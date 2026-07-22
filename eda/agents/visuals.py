@@ -52,7 +52,7 @@ def generate_visuals(df_trans: pd.DataFrame, df_stores: pd.DataFrame, df_cal: pd
     ax2.set_ylabel("Total Transacciones", color="#ff7f0e")
     
     lines = line1 + line2
-    labels = [l.get_label() for l in lines]
+    labels = [line.get_label() for line in lines]
     ax1.legend(lines, labels, loc="upper left")
     plt.title("Evolución Temporal de Ventas Totales y Transacciones Diarias", fontsize=14, fontweight="bold")
     
@@ -86,8 +86,8 @@ def generate_visuals(df_trans: pd.DataFrame, df_stores: pd.DataFrame, df_cal: pd
     event_means = []
     
     for ev in events:
-        mean_on = df_cal_perf[df_cal_perf[ev] == True]["amount_total"].mean()
-        mean_off = df_cal_perf[df_cal_perf[ev] == False]["amount_total"].mean()
+        mean_on = df_cal_perf[df_cal_perf[ev]]["amount_total"].mean()
+        mean_off = df_cal_perf[~df_cal_perf[ev]]["amount_total"].mean()
         event_means.append({"Evento": ev.replace("is_", "").replace("_", " ").title(), "Activo": mean_on, "Inactivo": mean_off})
         
     df_events = pd.DataFrame(event_means).melt(id_vars="Evento", var_name="Estado", value_name="Venta Promedio MXN")

@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 def analyze_overview(df_trans: pd.DataFrame, df_stores: pd.DataFrame, df_cal: pd.DataFrame) -> dict:
     """Analyze high-level dimensions, referential integrity, and temporal continuity."""

@@ -1,6 +1,5 @@
 import json
 import os
-import re
 
 def audit_draft_analysis(stats_raw_path: str, draft_path: str, audit_log_path: str = "outputs/audit_log.md") -> dict:
     """Audit draft_analysis.md line by line against stats_raw.json facts."""
@@ -43,7 +42,7 @@ def audit_draft_analysis(stats_raw_path: str, draft_path: str, audit_log_path: s
             "fact_name": fact_name,
             "expected_value": fact_value,
             "status": status,
-            "citation": f"stats_raw.json"
+            "citation": "stats_raw.json"
         })
         
     audit_md = f"""# Audit Log & Verification Report

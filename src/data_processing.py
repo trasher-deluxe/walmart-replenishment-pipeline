@@ -8,7 +8,6 @@ Walmart Supply Chain Resilience:
 
 from pathlib import Path
 import pandas as pd
-import numpy as np
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
