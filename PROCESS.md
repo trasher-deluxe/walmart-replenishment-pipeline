@@ -79,7 +79,33 @@ Un **gate de CI** (`savings_best_model_vs_naive_mxn >= 0`) quedará documentado 
 
 ---
 
-## 5. Asistencia de Herramientas de IA (Antigravity AI Agent)
+## 5. MLOps: Tracking, Model Registry y Gate de CI/CD
+
+Dependencia única añadida: **`mlflow-skinny`** (no `mlflow` completo — ver nota técnica abajo). Backend local de archivos (`mlruns/`, gitignoreado y regenerable con `python src/pipeline.py`), sin servidor de tracking.
+
+### 5.1 Tracking (`src/pipeline.py`)
+Cada corrida de `run_ml_pipeline()` se envuelve en `mlflow.start_run()` bajo el experimento `walmart-replenishment` y registra:
+- **Params:** hiperparámetros de LightGBM/XGBoost (`lgb_*`, `xgb_*`), `gap_horizon_days`, fechas de los splits, `n_features`.
+- **Metrics:** `wape`/`rmse`/pérdida financiera por modelo y por el baseline, y `savings_best_model_vs_naive_mxn`.
+- **Artifacts:** `ml_results.json`, las 5 figuras del EDA, `feature_cols.json`, feature importance del mejor LightGBM.
+
+### 5.2 Model Registry
+Ambos modelos (LightGBM y XGBoost) se loguean como artifacts de la corrida con firma (`infer_signature`) y `input_example`. El que gana en pérdida financiera de VALIDATION se registra en el Model Registry como **`walmart-replenishment`**:
+- Alias **`@staging`**: siempre apunta a la versión más reciente registrada.
+- Alias **`@production`**: solo se mueve si el modelo **supera al baseline seasonal-naive** (mismo criterio que el gate de CI, §5.3). Hoy no se mueve — el modelo actual pierde contra el baseline (§4).
+
+**Nota técnica — por qué `mlflow-skinny` y no `mlflow`:** al 2026-07-21, incluso el release más reciente de `mlflow` (3.14.0) fija `pandas<3`, incompatible con `pandas>=3.0.3` de este proyecto. `mlflow-skinny` no fija pandas y expone la misma API de tracking/registry usada aquí (`mlflow`, `mlflow.lightgbm`, `mlflow.xgboost`, `MlflowClient`). Los modelos se serializan con `serialization_format="pickle"` en vez del default `"skops"` para no sumar una dependencia extra solo por eso.
+
+**Para apuntar a un backend remoto (S3/GCS) en vez del filestore local:** basta con setear `MLFLOW_TRACKING_URI` (p. ej. `databricks`, `http://<servidor>`) y, para artifacts, `MLFLOW_ARTIFACT_LOCATION=s3://bucket/path` o `gs://bucket/path` al crear el experimento — sin tocar código.
+
+### 5.3 CI/CD (`.github/workflows/ci.yml`)
+En cada PR y push a `main`/`master`: `uv sync` → `ruff check` → `python src/pipeline.py` (entrena, trackea en MLflow, registra el modelo) → `pytest` → sube `ml_results.json` como artifact.
+
+**Gate champion/challenger** (`tests/test_model_gate.py`): `assert savings_best_model_vs_naive_mxn >= 0`. Si el mejor modelo no le gana al seasonal-naive, CI queda en rojo. **Hoy falla a propósito** — es el guardrail que impide que se repita el espejismo del §4 (una métrica inflada pasando a producción sin más control que "se ve bien").
+
+---
+
+## 6. Asistencia de Herramientas de IA (Antigravity AI Agent)
 
 Se utilizó el sistema agéntico **Antigravity AI** (Google DeepMind team) como pareja de Pair Programming para:
 1. **Fase 1 (EDA Autónomo en 4 Fases):** Creación del pipeline modular en `eda/` con profiling, fact-checking y generación de reportes (`EDA_Report.md` y `EDA_Report.html`).

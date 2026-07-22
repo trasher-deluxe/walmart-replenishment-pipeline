@@ -62,5 +62,12 @@
     "mean_predicted_signal": 549.76,
     "min_predicted_signal": 219.42,
     "max_predicted_signal": 1999.04
+  },
+  "mlflow": {
+    "run_id": "221132b097e744a6b9a1984ef858abe8",
+    "registered_model_name": "walmart-replenishment",
+    "registered_model_version": 1,
+    "registered_algorithm": "lightgbm",
+    "passes_baseline_gate": false
   }
 }
