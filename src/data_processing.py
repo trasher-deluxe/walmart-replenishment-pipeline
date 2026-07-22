@@ -40,8 +40,13 @@ def build_full_grid(df_trans: pd.DataFrame, df_stores: pd.DataFrame, df_cal: pd.
     
     return df_merged
 
-def impute_pos_failures(df: pd.DataFrame) -> pd.DataFrame:
-    """Impute missing metrics caused by POS/connectivity failures using accounting identities & medians."""
+def impute_pos_failures(df: pd.DataFrame, train_end: str | None = None) -> pd.DataFrame:
+    """Impute missing metrics caused by POS/connectivity failures using accounting identities & medians.
+
+    `train_end` (YYYY-MM-DD): median-based imputations are computed ONLY from rows on/before
+    this date, so no information from the validation/holdout periods leaks into the imputed
+    history. Accounting identities are row-wise and leak-free regardless.
+    """
     df = df.copy()
 
     # 1. Accounting Identity: Cash Transactions = Total - Card
@@ -60,19 +65,22 @@ def impute_pos_failures(df: pd.DataFrame) -> pd.DataFrame:
     valid_tx = (df["total_transactions"] > 0) & (df["avg_ticket"].isnull())
     df.loc[valid_tx, "avg_ticket"] = df.loc[valid_tx, "amount_total"] / df.loc[valid_tx, "total_transactions"]
 
-    # 4. Impute units_sold and remaining avg_ticket via median per (store_id, category, day_of_week)
+    # 4. Impute units_sold and remaining avg_ticket via median per (store_id, category, day_of_week).
+    #    Medians come ONLY from the train window (train_end) to avoid leaking future stats.
     df["day_of_week"] = df["date"].dt.dayofweek
+    ref = df if train_end is None else df[df["date"] <= pd.Timestamp(train_end)]
     for col in ["units_sold", "avg_ticket"]:
-        df[col] = df.groupby(["store_id", "category", "day_of_week"])[col].transform(
-            lambda s: s.fillna(s.median())
-        )
-        # Fallback to category median if still null
-        df[col] = df.groupby("category")[col].transform(lambda s: s.fillna(s.median()))
+        grp_med = ref.groupby(["store_id", "category", "day_of_week"])[col].median().to_dict()
+        keys = df.set_index(["store_id", "category", "day_of_week"]).index
+        df[col] = df[col].fillna(pd.Series(keys.map(grp_med), index=df.index))
+        # Fallback to category median (also train-only) if still null
+        cat_med = ref.groupby("category")[col].median().to_dict()
+        df[col] = df[col].fillna(df["category"].map(cat_med))
 
     df.drop(columns=["day_of_week"], inplace=True, errors="ignore")
     return df
 
-def merge_master_dataset(data_dir: Path = DATA_DIR) -> pd.DataFrame:
+def merge_master_dataset(data_dir: Path = DATA_DIR, train_end: str | None = None) -> pd.DataFrame:
     """End-to-End Master Dataset Creation for Model Training & Inference.
     
     Joins:
@@ -83,8 +91,8 @@ def merge_master_dataset(data_dir: Path = DATA_DIR) -> pd.DataFrame:
     """
     df_trans, df_stores, df_cal = load_raw(data_dir)
     
-    # 1. Impute POS failures on raw transactions
-    df_trans_clean = impute_pos_failures(df_trans)
+    # 1. Impute POS failures on raw transactions (train-only medians to prevent leakage)
+    df_trans_clean = impute_pos_failures(df_trans, train_end=train_end)
     
     # 2. Build complete grid
     df_grid = build_full_grid(df_trans_clean, df_stores, df_cal)
