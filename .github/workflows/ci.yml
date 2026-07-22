@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Run ML pipeline (trains, tracks with MLflow, registers model)
+        run: uv run python src/pipeline.py
+
+      # Champion/challenger gate: the trained model must beat the seasonal-naive (lag-7)
+      # baseline. It doesn't today (see PROCESS.md §4) — that's intentional: this test is
+      # the guardrail against promoting a worse-than-baseline model, not a rubber stamp.
+      - name: Run tests (incl. champion/challenger gate)
+        run: uv run pytest tests/ -v
+
+      - name: Upload ml_results.json
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ml-results
+          path: outputs/ml_results.json
