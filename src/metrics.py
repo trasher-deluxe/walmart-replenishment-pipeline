@@ -44,5 +44,4 @@ def business_impact_mxn(
         "overstock_cost_mxn": float(round(overstock_cost_mxn, 2)),
         "stockout_cost_mxn": float(round(stockout_cost_mxn, 2)),
         "total_financial_loss_mxn": float(round(total_cost_mxn, 2)),
-        "estimated_savings_vs_baseline_mxn": float(round(total_cost_mxn * 0.45, 2))
     }
