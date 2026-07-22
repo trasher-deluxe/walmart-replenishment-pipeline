@@ -63,23 +63,24 @@ uv run pytest tests/ -v
 
 ## Resultados Principales e Impacto Financiero
 
-Evaluación **gap-aware**: forecast a **7 días** con features *gap-safe* (sin `lag_1` ni rolling contemporáneo — no existen durante la ceguera de inventario), sobre el split de **VALIDATION (Diciembre 2023 – Enero 2024)**. Comparado contra un baseline **seasonal-naive (lag-7)**, calculado, no inventado.
+Evaluación **gap-aware**: forecast a **7 días** con cross-validation rolling-origin sobre las **480 series** (store × category), contra un baseline **seasonal-naive (lag-7)** calculado, no inventado. El modelo de **producción** es **AutoETS** (statsforecast).
 
-| Modelo | WAPE (%) | RMSE | Pérdida Financiera Total (MXN) |
-|--------|----------|------|---------------------------------|
-| **Baseline seasonal-naive (lag-7)** | **22.64%** | — | **$170.5M** |
-| LightGBM (gap-safe) | 32.62% | 406.62 | $244.1M |
-| XGBoost (gap-safe) | 37.26% | 503.14 | $244.5M |
+| Modelo | WAPE | vs baseline |
+|--------|------|-------------|
+| **AutoETS (PRODUCCIÓN)** | **16.0%** | **−7.3 pts · ahorro +$48.0M MXN** ✅ |
+| SeasonalNaive (baseline) | 23.3% | — |
+| LightGBM tabular (investigación) | 32.6% | pierde |
+| XGBoost tabular (investigación) | 37.3% | pierde |
 
-**Hallazgo honesto:** en este escenario realista, ambos modelos GBM pierden contra el baseline (ahorro real ≈ **–$73.6M MXN**). Detalle del diagnóstico y próximos pasos para superarlo en `PROCESS.md §4`. Un gate de CI (`tests/test_model_gate.py`) falla a propósito mientras esto siga así — ver `PROCESS.md §5`.
+**La decisión clave fue de paradigma.** El GBM tabular **no** le gana al naive —los árboles no extrapolan tendencia—; un forecaster nativo (**ETS**: nivel + tendencia + estacionalidad) sí, por ~7 puntos de WAPE — el mismo enfoque que corre bajo AWS Forecast / GCP Vertex. El gate champion/challenger (`tests/test_model_gate.py`) está en **verde** y AutoETS se promueve a `@production`. Detalle e investigación completa en `PROCESS.md §4`.
 
 ---
 
 ## MLOps: Tracking, Model Registry y CI/CD
 
 - **Tracking:** cada corrida de `src/pipeline.py` se registra en MLflow (`mlruns/`, backend local de archivos) con params, métricas e artifacts.
-- **Model Registry:** el mejor modelo se registra como `walmart-replenishment`; alias `@staging` siempre, `@production` solo si supera al baseline.
-- **CI (`.github/workflows/ci.yml`):** `ruff check` + `python src/pipeline.py` + `pytest` (gate champion/challenger) en cada PR.
+- **Model Registry:** AutoETS se registra como `walmart-replenishment`; alias `@staging` siempre, `@production` solo si supera al baseline (hoy **sí** → `@production` activo).
+- **CI (`.github/workflows/ci.yml`):** `ruff check` + `python src/pipeline.py` + `pytest` (gate champion/challenger, en **verde**) en cada PR.
 
 ### Inferencia con el modelo registrado
 

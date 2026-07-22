@@ -3310,6 +3310,7 @@ dependencies = [
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "seaborn" },
+    { name = "statsforecast" },
     { name = "xgboost", version = "3.2.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "xgboost", version = "3.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
@@ -3317,9 +3318,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
-]
-experiments = [
-    { name = "statsforecast" },
 ]
 
 [package.metadata]
@@ -3335,12 +3333,12 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.9.0" },
     { name = "scipy", specifier = ">=1.17.1" },
     { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "statsforecast", specifier = ">=2.0.0" },
     { name = "xgboost", specifier = ">=3.2.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.1.1" }]
-experiments = [{ name = "statsforecast", specifier = ">=2.0.0" }]
 
 [[package]]
 name = "wcwidth"

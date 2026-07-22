@@ -14,15 +14,17 @@ from pathlib import Path
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+import pandas as pd
+
 # mlflow-skinny (not the full `mlflow` package): the latest mlflow still pins pandas<3,
 # incompatible with this project's pandas>=3.0.3. mlflow-skinny has no pandas pin and
 # provides the same tracking/registry API used here. See PROCESS.md §5.
 os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")  # opt into the local file backend (no tracking server)
 import mlflow
 import mlflow.lightgbm
+import mlflow.pyfunc
 import mlflow.xgboost
 from mlflow import MlflowClient
-from mlflow.models import infer_signature
 
 from src.data_processing import merge_master_dataset
 from src.features import (
@@ -30,8 +32,20 @@ from src.features import (
     fit_target_encoders,
     transform_target_encoders
 )
+from src.forecasting import evaluate_production, fit_production
 from src.models import DemandForecaster
 from src.metrics import wape, rmse, business_impact_mxn
+
+
+class _ETSProductionModel(mlflow.pyfunc.PythonModel):
+    """MLflow wrapper for the fitted AutoETS forecaster. predict() returns the next
+    GAP_HORIZON-day forecast per (store × category) series."""
+
+    def __init__(self, sf):
+        self.sf = sf
+
+    def predict(self, context, model_input, params=None):
+        return self.sf.predict(h=GAP_HORIZON)
 
 # Chronological split boundaries (single source of truth)
 TRAIN_END = "2023-11-30"
@@ -163,69 +177,70 @@ def _run_ml_pipeline(run) -> dict:
     wape_naive = wape(y_val, val_preds_naive)
     impact_naive = business_impact_mxn(y_val, val_preds_naive)
 
-    # Real savings = baseline loss - best model loss (no invented factor).
-    best_model_loss = min(impact_lgb["total_financial_loss_mxn"], impact_xgb["total_financial_loss_mxn"])
-    savings_vs_naive_mxn = round(impact_naive["total_financial_loss_mxn"] - best_model_loss, 2)
+    # Tabular investigation: the best GBM vs the naive — it LOSES (trees can't extrapolate).
+    best_tabular_loss = min(impact_lgb["total_financial_loss_mxn"], impact_xgb["total_financial_loss_mxn"])
+    savings_tabular_vs_naive_mxn = round(impact_naive["total_financial_loss_mxn"] - best_tabular_loss, 2)
 
     print(f"   📉 Baseline (seasonal-naive lag-7) -> WAPE: {wape_naive:.4f} ({wape_naive*100:.2f}%) | Pérdida: ${impact_naive['total_financial_loss_mxn']:,.2f} MXN")
-    print(f"   🏆 LightGBM -> WAPE: {wape_lgb:.4f} ({wape_lgb*100:.2f}%) | RMSE: {rmse_lgb:.2f} | Pérdida Financiera Estimada: ${impact_lgb['total_financial_loss_mxn']:,.2f} MXN")
-    print(f"   ⚡ XGBoost  -> WAPE: {wape_xgb:.4f} ({wape_xgb*100:.2f}%) | RMSE: {rmse_xgb:.2f} | Pérdida Financiera Estimada: ${impact_xgb['total_financial_loss_mxn']:,.2f} MXN")
-    print(f"   💰 Ahorro real del mejor modelo vs baseline naive: ${savings_vs_naive_mxn:,.2f} MXN")
+    print(f"   🌲 LightGBM (tabular) -> WAPE: {wape_lgb:.4f} | Pérdida: ${impact_lgb['total_financial_loss_mxn']:,.2f} MXN")
+    print(f"   🌲 XGBoost (tabular)  -> WAPE: {wape_xgb:.4f} | Pérdida: ${impact_xgb['total_financial_loss_mxn']:,.2f} MXN")
+    print(f"   ↪ El GBM tabular NO supera al naive (ahorro ${savings_tabular_vs_naive_mxn:,.2f} MXN) — ver PROCESS §4.")
+
+    # 7b. PRODUCTION forecaster: AutoETS via rolling-origin 7-day-ahead CV across all 480 series.
+    #     A native time-series model extrapolates level+trend+seasonality where the tree cannot,
+    #     so it BEATS the seasonal-naive. This is the model we register and promote to @production.
+    print("\n📈 [Paso 6b] Evaluando forecaster de PRODUCCIÓN (AutoETS, CV rolling 7 días sobre 480 series)...")
+    ets_eval = evaluate_production(df_master, VAL_END, GAP_HORIZON, n_windows=8)
+    ets, cv_naive = ets_eval["autoets"], ets_eval["seasonal_naive"]
+    ets_loss = ets["financial_impact_mxn"]["total_financial_loss_mxn"]
+    cv_naive_loss = cv_naive["financial_impact_mxn"]["total_financial_loss_mxn"]
+    savings_vs_naive_mxn = round(cv_naive_loss - ets_loss, 2)
+    print(f"   📉 SeasonalNaive (CV) -> WAPE: {cv_naive['wape']:.4f} | Pérdida: ${cv_naive_loss:,.2f} MXN")
+    print(f"   🏆 AutoETS (PRODUCCIÓN) -> WAPE: {ets['wape']:.4f} | Pérdida: ${ets_loss:,.2f} MXN")
+    print(f"   💰 Ahorro real de AutoETS vs baseline: ${savings_vs_naive_mxn:,.2f} MXN  ({(cv_naive['wape']-ets['wape'])*100:.1f} pts WAPE)")
 
     mlflow.log_metrics({
-        "wape_lightgbm": wape_lgb,
-        "rmse_lightgbm": rmse_lgb,
-        "financial_loss_lightgbm_mxn": impact_lgb["total_financial_loss_mxn"],
-        "wape_xgboost": wape_xgb,
-        "rmse_xgboost": rmse_xgb,
-        "financial_loss_xgboost_mxn": impact_xgb["total_financial_loss_mxn"],
-        "wape_baseline_naive": wape_naive,
-        "financial_loss_baseline_naive_mxn": impact_naive["total_financial_loss_mxn"],
+        "wape_lightgbm": wape_lgb, "financial_loss_lightgbm_mxn": impact_lgb["total_financial_loss_mxn"],
+        "wape_xgboost": wape_xgb, "financial_loss_xgboost_mxn": impact_xgb["total_financial_loss_mxn"],
+        "wape_baseline_naive_valrows": wape_naive,
+        "wape_baseline_naive_cv": cv_naive["wape"],
+        "wape_autoets_production": ets["wape"],
+        "financial_loss_autoets_mxn": ets_loss,
+        "savings_tabular_vs_naive_mxn": savings_tabular_vs_naive_mxn,
         "savings_best_model_vs_naive_mxn": savings_vs_naive_mxn,
     })
     passes_baseline_gate = savings_vs_naive_mxn >= 0
     mlflow.set_tag("passes_baseline_gate", str(passes_baseline_gate))
+    mlflow.set_tag("production_model", "AutoETS")
 
-    # 8. Feature Importances
+    # 8. Log tabular candidates as artifacts (traceability of the investigation).
     fi_lgb = lgb_forecaster.feature_importance().head(10).to_dict()
     mlflow.log_dict({k: float(v) for k, v in fi_lgb.items()}, "feature_importance_lightgbm.json")
+    mlflow.lightgbm.log_model(lgb_forecaster.model, name="model_lightgbm_tabular",
+                              serialization_format="pickle")
+    mlflow.xgboost.log_model(xgb_forecaster.model, name="model_xgboost_tabular")
 
-    # 8b. Log & Register Models. Both candidates are logged as run artifacts for full
-    #     traceability; only the one that wins on VALIDATION loss is pushed to the
-    #     Model Registry. Alias "staging" always points at the latest candidate;
-    #     "production" only moves if it clears the champion/challenger gate (must not
-    #     lose to the seasonal-naive baseline — same check enforced by the CI test).
-    print("\n📋 [Paso 8] Registrando modelos en MLflow Model Registry...")
-    lgb_signature = infer_signature(X_val, val_preds_lgb)
-    lgb_model_info = mlflow.lightgbm.log_model(
-        lgb_forecaster.model, name="model_lightgbm",
-        signature=lgb_signature, input_example=X_val.head(3), serialization_format="pickle"
-    )
-    xgb_signature = infer_signature(X_val, val_preds_xgb)
-    xgb_model_info = mlflow.xgboost.log_model(
-        xgb_forecaster.model, name="model_xgboost",
-        signature=xgb_signature, input_example=X_val.head(3)
-    )
-
-    if impact_lgb["total_financial_loss_mxn"] <= impact_xgb["total_financial_loss_mxn"]:
-        best_algo, best_model_uri = "lightgbm", lgb_model_info.model_uri
-    else:
-        best_algo, best_model_uri = "xgboost", xgb_model_info.model_uri
+    # 8b. Register the AutoETS PRODUCTION forecaster. @staging always; @production only when it
+    #     clears the champion/challenger gate (beats the seasonal-naive) — which it does.
+    print("\n📋 [Paso 8] Registrando el forecaster de PRODUCCIÓN (AutoETS) en el Model Registry...")
+    ets_sf = fit_production(df_master, VAL_END)
+    ets_info = mlflow.pyfunc.log_model(name="model_autoets", python_model=_ETSProductionModel(ets_sf))
 
     client = MlflowClient()
-    registered_version = mlflow.register_model(best_model_uri, REGISTERED_MODEL_NAME).version
+    registered_version = mlflow.register_model(ets_info.model_uri, REGISTERED_MODEL_NAME).version
     client.set_registered_model_alias(REGISTERED_MODEL_NAME, "staging", registered_version)
+    best_algo = "autoets"
     if passes_baseline_gate:
         client.set_registered_model_alias(REGISTERED_MODEL_NAME, "production", registered_version)
-        print(f"   ✓ '{best_algo}' v{registered_version} registrado como '{REGISTERED_MODEL_NAME}' -> @staging, @production (supera al baseline)")
+        print(f"   ✓ AutoETS v{registered_version} registrado -> @staging, @production (supera al baseline)")
     else:
-        print(f"   ✓ '{best_algo}' v{registered_version} registrado como '{REGISTERED_MODEL_NAME}' -> @staging únicamente (NO supera al baseline, @production sin mover)")
+        print(f"   ✓ AutoETS v{registered_version} registrado -> @staging únicamente (no supera al baseline)")
 
-    # 9. Predict on Holdout / Blind Test Period (Feb 2024)
-    print("\n🔮 [Paso 7] Realizando predicciones sobre HOLDOUT (Ceguera de Inventario - Feb 2024)...")
-    holdout_clean = df_holdout.dropna(subset=feature_cols).copy()
-    holdout_preds = lgb_forecaster.predict(holdout_clean[feature_cols])
-    holdout_clean["predicted_replenishment_signal"] = holdout_preds
+    # 9. Forecast the blind window (HOLDOUT, Feb 2024) with the production AutoETS.
+    print("\n🔮 [Paso 7] Pronosticando la ventana ciega (HOLDOUT, Feb 2024) con AutoETS...")
+    holdout_days = (pd.Timestamp(HOLDOUT_END) - pd.Timestamp(HOLDOUT_START)).days + 1
+    holdout_fc = ets_sf.predict(h=holdout_days)
+    holdout_preds = holdout_fc["AutoETS"]
     
     # Summary results
     results = {
@@ -236,30 +251,34 @@ def _run_ml_pipeline(run) -> dict:
             "holdout_rows": int(len(df_holdout))
         },
         "evaluation_setup": {
-            "task": f"{GAP_HORIZON}-day-ahead forecast (gap-safe features only)",
+            "task": f"{GAP_HORIZON}-day-ahead forecast (rolling-origin CV over {ets_eval['n_series']} series)",
             "gap_horizon_days": GAP_HORIZON,
-            "baseline": "seasonal-naive (lag-7)"
+            "baseline": "seasonal-naive (lag-7)",
+            "production_model": "AutoETS (statsforecast)"
+        },
+        "production_forecaster": {
+            "model": "AutoETS",
+            "wape": ets["wape"],
+            "financial_impact_mxn": ets["financial_impact_mxn"],
+            "baseline_seasonal_naive": {
+                "wape": cv_naive["wape"],
+                "financial_impact_mxn": cv_naive["financial_impact_mxn"]
+            },
+            "n_series": ets_eval["n_series"],
+            "n_windows": ets_eval["n_windows"]
         },
         "model_performance": {
-            "baseline_seasonal_naive_lag7": {
-                "wape": float(round(wape_naive, 4)),
-                "financial_impact_mxn": impact_naive
-            },
             "savings_best_model_vs_naive_mxn": float(savings_vs_naive_mxn),
-            "lightgbm": {
-                "wape": float(round(wape_lgb, 4)),
-                "rmse": float(round(rmse_lgb, 2)),
-                "financial_impact_mxn": impact_lgb
-            },
-            "xgboost": {
-                "wape": float(round(wape_xgb, 4)),
-                "rmse": float(round(rmse_xgb, 2)),
-                "financial_impact_mxn": impact_xgb
+            "tabular_investigation": {
+                "note": "Tabular GBMs lose to the naive (trees cannot extrapolate) — see PROCESS §4.",
+                "baseline_seasonal_naive_lag7_valrows": {"wape": float(round(wape_naive, 4)), "financial_impact_mxn": impact_naive},
+                "lightgbm": {"wape": float(round(wape_lgb, 4)), "rmse": float(round(rmse_lgb, 2)), "financial_impact_mxn": impact_lgb},
+                "xgboost": {"wape": float(round(wape_xgb, 4)), "rmse": float(round(rmse_xgb, 2)), "financial_impact_mxn": impact_xgb},
+                "savings_tabular_vs_naive_mxn": float(savings_tabular_vs_naive_mxn)
             }
         },
-        "top_10_feature_importances": {k: float(round(v, 4)) for k, v in fi_lgb.items()},
-        "holdout_predictions_summary": {
-            "predicted_records_count": int(len(holdout_clean)),
+        "holdout_forecast_summary": {
+            "forecast_records_count": int(len(holdout_preds)),
             "mean_predicted_signal": float(round(holdout_preds.mean(), 2)),
             "min_predicted_signal": float(round(holdout_preds.min(), 2)),
             "max_predicted_signal": float(round(holdout_preds.max(), 2))

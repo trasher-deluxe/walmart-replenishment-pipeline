@@ -29,11 +29,10 @@ jobs:
       - name: Run ML pipeline (trains, tracks with MLflow, registers model)
         run: uv run python src/pipeline.py
 
-      # Champion/challenger gate: the trained model must beat the seasonal-naive (lag-7)
-      # baseline. It doesn't today (see PROCESS.md §4), so the gate test is marked
-      # xfail(strict=True): CI stays green with an explicit `xfailed`, and only turns red if
-      # the model unexpectedly beats the baseline (XPASS) — a prompt to promote the gate to a
-      # hard assert. It never rubber-stamps a worse-than-baseline model into @production.
+      # Champion/challenger gate: the production forecaster (AutoETS) must beat the
+      # seasonal-naive baseline. It does (~7 WAPE pts, see PROCESS.md §4), so this is a hard
+      # assert and CI is green. If a future run promoted a worse-than-baseline model, the gate
+      # goes red and blocks the merge — the same criterion that controls the @production alias.
       - name: Run tests (incl. champion/challenger gate)
         run: uv run pytest tests/ -v
 

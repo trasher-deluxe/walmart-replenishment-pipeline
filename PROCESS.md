@@ -64,7 +64,7 @@ Forecast a **7 días** con features **gap-safe**, comparado contra un baseline *
 | LightGBM (gap-safe) | 32.62% | 406.62 | $244.1M |
 | XGBoost (gap-safe) | 37.26% | 503.14 | $244.5M |
 
-### Hallazgo honesto: el modelo aún NO supera al baseline
+### Hallazgo: el GBM tabular no supera al naive; AutoETS sí
 
 En el escenario realista, **ambos GBM pierden contra el seasonal-naive** (ahorro real ≈ **–$73.6M MXN**). La razón es diagnosticada, no misteriosa: al remover `lag_1` (que en la versión anterior concentraba >90% de la importancia y **no existe** durante el hueco), el modelo se queda con `lag_7/14/28` + calendario e intenta reaprender lo que `lag_7` ya codifica, agregando ruido.
 
@@ -95,9 +95,10 @@ cross-validation rolling-origin a 7 días sobre las 480 series. **Aquí SÍ se s
 estacionalidad, con estado suavizado sobre toda la historia) le gana al seasonal-naive por **~7 puntos
 de WAPE**, mientras que un GBM tabular no puede. Para un forecast de series con nivel/estacionalidad, el
 modelo correcto es un ETS/ARIMA/Theta — exactamente lo que corre por debajo de AWS Forecast y GCP Vertex
-Forecasting. **Próximo paso de producción:** reemplazar el forecaster tabular por AutoETS (flipea el gate
-champion/challenger a verde). Aún así, sumar datos exógenos (promociones, inventario upstream) subiría
-más el techo.
+Forecasting. **Decisión tomada:** **AutoETS es el modelo de producción** — `src/pipeline.py` lo evalúa,
+lo registra en MLflow y lo promueve a `@production` (supera al baseline por ~7 pts WAPE, ahorro
+≈ **+$48M MXN**); el gate champion/challenger quedó en **verde**. Los GBM tabulares se conservan como
+investigación documentada. Sumar datos exógenos (promociones, inventario upstream) subiría aún más el techo.
 
 Un **gate de CI** (`savings_best_model_vs_naive_mxn >= 0`, ver §5.3) impide que un modelo peor que el baseline llegue a producción.
 
@@ -125,7 +126,7 @@ Ambos modelos (LightGBM y XGBoost) se loguean como artifacts de la corrida con f
 ### 5.3 CI/CD (`.github/workflows/ci.yml`)
 En cada PR y push a `main`/`master`: `uv sync` → `ruff check` → `python src/pipeline.py` (entrena, trackea en MLflow, registra el modelo) → `pytest` → sube `ml_results.json` como artifact.
 
-**Gate champion/challenger** (`tests/test_model_gate.py`): `assert savings_best_model_vs_naive_mxn >= 0`, marcado `@pytest.mark.xfail(strict=True)`. Como el modelo actual **sabidamente** pierde vs el baseline (§4), es una limitación conocida y documentada: CI queda **verde** con un `xfailed` explícito en vez de un rojo de "roto". El día que las features multi-step hagan ganar al modelo, el test hará **XPASS** y `strict=True` lo vuelve rojo — señal para quitar el marcador y volverlo un `assert` duro. Es decir, rojo solo significa "el gate está obsoleto", nunca "el modelo se degradó". El guardrail real que impide promover a `@production` un modelo peor que el baseline vive en `src/pipeline.py` (`passes_baseline_gate`), independiente de este test.
+**Gate champion/challenger** (`tests/test_model_gate.py`): `assert savings_best_model_vs_naive_mxn >= 0` sobre el modelo de **producción** (AutoETS). Hoy está en **verde** — AutoETS supera al baseline. Si una futura corrida promoviera un modelo peor que el naive, el test se pondría rojo y bloquearía el merge; el mismo criterio (`passes_baseline_gate` en `src/pipeline.py`) controla el alias `@production`.
 
 ### 5.4 Política de artefactos versionados
 
