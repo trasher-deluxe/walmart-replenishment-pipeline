@@ -22,6 +22,11 @@ dependencies = [
 dev = [
     "pytest>=9.1.1",
 ]
+# Optional: statistical forecasting baselines (Nixtla statsforecast). Kept out of the core
+# pipeline deps — install with `uv sync --group experiments` to run experiments/.
+experiments = [
+    "statsforecast>=2.0.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

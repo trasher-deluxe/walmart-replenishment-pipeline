@@ -70,21 +70,34 @@ En el escenario realista, **ambos GBM pierden contra el seasonal-naive** (ahorro
 
 > El WAPE de ~8% reportado en una iteración previa era un **espejismo de persistencia de 1 paso** apoyado en "el valor de ayer", más una métrica de ahorro con un factor arbitrario (`×0.45`). Ambos fueron **eliminados** por deshonestos. Se prefiere un resultado negativo auditable a una métrica inflada.
 
-**Investigación para superar el baseline (realizada).** Se probó —todo gap-safe—:
-- Features estacionales multi-semana (media/std de `lag_7/14/21/28`) y rolling sobre `shift(7)`.
-- Optimización bayesiana de hiperparámetros (**Optuna/TPE, 40 trials**) sobre una *inner-validation*
-  recortada del TRAIN, para no tocar VALIDATION durante el tuning.
-- **Residual learning** sobre el ancla lag-7 (el árbol solo aprende la corrección `señal − lag_7`)
-  y modelos lineales (Ridge, que sí extrapolan tendencias).
+**Investigación para superar el baseline (realizada en dos paradigmas).**
 
-**Ninguno superó al seasonal-naive** (todos entre 28% y 54% WAPE, vs 22.6%). Diagnóstico con datos:
-el residuo real `señal − lag_7` tiene magnitud ≈180 sobre una señal media ≈800 y resulta
-**no aprendible** con las features disponibles (cualquier modelo predice correcciones ≈2× más
-grandes que las reales). VALIDATION (Dic–Ene) es un régimen de *holidays* que TRAIN (Ene–Nov) no
-cubre; lag-7 gana porque se adapta localmente. **Conclusión de ingeniería:** el ~22.6% WAPE es el
-**piso de ruido** para este target/horizonte — superarlo exige **datos exógenos** (calendario de
-promociones, señal de inventario upstream) ausentes en el dataset, no más búsqueda de
-hiperparámetros (que de hecho empeoró por overfitting a la inner-window no representativa).
+**(A) Paradigma tabular (GBM sobre features gap-safe).** Se probó features estacionales multi-semana
+(`lag_7/14/21/28`, rolling `shift(7)`), **Optuna/TPE (40 trials)** sobre una *inner-validation*
+recortada del TRAIN, **residual learning** sobre el ancla lag-7, y modelos lineales (Ridge). **Ninguno
+superó al naive** (28–54% WAPE). Diagnóstico: los árboles **no extrapolan** y el marco tabular pierde
+la estructura temporal; el residuo `señal − lag_7` no es aprendible con esas features. El modelo que
+ship-ea el pipeline (`src/pipeline.py`) es de este paradigma y por eso pierde (32.6% vs 22.6%).
+
+**(B) Paradigma de forecasting time-series-native (estilo AWS Forecast / Nixtla).**
+`experiments/forecasting_baselines.py` corre **AutoETS, DynamicOptimizedTheta y AutoARIMA** con
+cross-validation rolling-origin a 7 días sobre las 480 series. **Aquí SÍ se supera al naive, y por mucho:**
+
+| Modelo (CV rolling 7-day-ahead) | WAPE |
+|---|---|
+| SeasonalNaive (≈ baseline) | 23.3% |
+| **AutoETS** | **16.0%** |
+| DynamicOptimizedTheta | 16.1% |
+| AutoARIMA (muestra de 48 series) | 21.3% (vs 22.8% del naive en la misma muestra) |
+
+**Conclusión (corregida — decisión de ingeniería).** El límite **no** era falta de señal: era el
+**paradigma de modelo**. Un forecaster nativo (suavizado exponencial ETS: nivel + tendencia +
+estacionalidad, con estado suavizado sobre toda la historia) le gana al seasonal-naive por **~7 puntos
+de WAPE**, mientras que un GBM tabular no puede. Para un forecast de series con nivel/estacionalidad, el
+modelo correcto es un ETS/ARIMA/Theta — exactamente lo que corre por debajo de AWS Forecast y GCP Vertex
+Forecasting. **Próximo paso de producción:** reemplazar el forecaster tabular por AutoETS (flipea el gate
+champion/challenger a verde). Aún así, sumar datos exógenos (promociones, inventario upstream) subiría
+más el techo.
 
 Un **gate de CI** (`savings_best_model_vs_naive_mxn >= 0`, ver §5.3) impide que un modelo peor que el baseline llegue a producción.
 
