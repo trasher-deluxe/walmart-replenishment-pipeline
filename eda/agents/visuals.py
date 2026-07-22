@@ -21,7 +21,7 @@ def generate_visuals(df_trans: pd.DataFrame, df_stores: pd.DataFrame, df_cal: pd
     missing_pct = missing_pct[missing_pct > 0].sort_values(ascending=False)
     
     if len(missing_pct) > 0:
-        ax = sns.barplot(x=missing_pct.values, y=missing_pct.index, palette="viridis")
+        ax = sns.barplot(x=missing_pct.values, y=missing_pct.index, hue=missing_pct.index, palette="viridis", legend=False)
         plt.title("Porcentaje de Datos Faltantes por Variable", fontsize=14, fontweight="bold")
         plt.xlabel("% Faltante")
         plt.ylabel("Variable")
