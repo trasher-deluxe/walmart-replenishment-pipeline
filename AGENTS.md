@@ -2,7 +2,8 @@
 
 Instrucciones para cualquier asistente de código (Claude Code, Cursor, Copilot, Aider, etc.)
 que trabaje en este repositorio. Complemento generalista de `PROCESS.md` (metodología) y de los
-subagentes en `.claude/agents/`.
+subagentes en `agents/` (definiciones de rol tool-neutral, usables por cualquier asistente — el
+equivalente portable de un `.claude/agents/`).
 
 ## Proyecto
 
@@ -33,7 +34,10 @@ uv run ruff check .              # lint (debe pasar limpio)
 - `src/models.py` — `DemandForecaster` (wrapper LightGBM/XGBoost).
 - `src/metrics.py` — `wape`, `rmse`, `business_impact_mxn`.
 - `src/pipeline.py` — orquestador ML end-to-end + MLflow. Constantes fuente-de-verdad: `TRAIN_END`, `VAL_*`, `HOLDOUT_*`, `GAP_HORIZON`.
-- `eda/` — pipeline EDA de 9 agentes en 4 fases (ver `.claude/agents/1_eda_multiagent.md`).
+- `eda/` — pipeline EDA de 9 agentes en 4 fases (ver `agents/1_eda_multiagent.md`).
+- `agents/` — definiciones de subagentes del proyecto (tool-neutral), en orden de construcción:
+  `1_eda_multiagent`, `2_feature_engineer`, `3_ml_pipeline`, `4_leakage_auditor`, `5_mlops_ci`,
+  `6_test_suite`.
 - `tests/` — `pytest`; `.github/workflows/ci.yml` — CI (lint + pipeline + tests).
 
 ## Reglas no negociables (así se decidió y así se mantiene)

@@ -36,15 +36,14 @@ Requirements:
    (`amount_cash`, `cash_transactions`), the POS-outage store-days (`pos_outage_flag`), and the
    `replenishment_signal` nulls at the end of February 2024 (the inventory-blindness window).
 
-4. `profiling.py` MUST compute the retail/actuarial-style business metrics: daily sales & average
-   ticket by store format (Bodega / Express / Supercenter), the `replenishment_signal`
-   distribution and its zero-inflation %, POS-imputation coverage, and the financial-impact
-   framing (overstock cost 15% vs stockout cost 30% of unit value, in MXN).
+4. `profiling.py` MUST compute the retail business metrics: daily sales & average ticket by store
+   format (Bodega / Express / Supercenter), the `replenishment_signal` distribution and its
+   zero-inflation %, POS-imputation coverage, and the financial-impact framing (overstock cost 15%
+   vs stockout cost 30% of unit value, in MXN).
 
 5. `report.py` MUST render a self-contained `reports/EDA_Report.html` and `reports/EDA_Report.md`
-   from the single source of truth `outputs/stats_raw.json` (no external assets; the current
-   implementation builds the HTML in pure Python — keep it dependency-light, no new templating
-   engine unless already present).
+   from the single source of truth `outputs/stats_raw.json` (no external assets; build the HTML in
+   pure Python — keep it dependency-light, no new templating engine).
 
 6. Run `python eda/main.py` and verify that the 5 figures in `figures/` (300 DPI) and both reports
    in `reports/` are generated, and that the auditor reports 0 discrepancies.
