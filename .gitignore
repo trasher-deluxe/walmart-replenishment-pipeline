@@ -36,5 +36,8 @@ outputs/ml_results.json
 *.pt
 *.h5
 
+# Grafo de conocimiento del repo (herramienta de desarrollo, local y regenerable)
+graphify-out/
+
 # MLflow local tracking store (regenerable con `python src/pipeline.py`)
 mlruns/
