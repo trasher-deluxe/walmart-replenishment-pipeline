@@ -23,7 +23,7 @@ Se aplicó una reconstrucción contable en 4 pasos:
 1. **Identidad Contable de Efectivo:** `amount_cash` = `amount_total` - `amount_card` (donde la transacción por tarjeta fue registrada).
 2. **Identidad Contable de Transacciones:** `cash_transactions` = `total_transactions` - `card_transactions`.
 3. **Recálculo de Ticket Promedio:** `avg_ticket` = `amount_total` / `total_transactions`.
-4. **Imputación de Unidades Vendidas:** Imputación por la mediana histórica agrupada por `(store_id, category, day_of_week)`.
+4. **Imputación de Unidades Vendidas y Ticket:** Imputación por la mediana histórica agrupada por `(store_id, category, day_of_week)`, con *fallback* a mediana por categoría. **Las medianas se calculan exclusivamente sobre la ventana TRAIN (`date ≤ 2023-11-30`)** y luego se aplican a validación y holdout, evitando que estadísticas del futuro se filtren hacia la historia imputada (anti-leakage — ver `impute_pos_failures(train_end=...)`).
 5. **Grilla Cartesiana Completa:** Reindexación cartesiana de $425 \text{ días} \times 80 \text{ tiendas} \times 6 \text{ categorías} = 204,000 \text{ filas}$ marcando `pos_outage_flag = 1` en días de caída total.
 
 ---
@@ -37,6 +37,12 @@ Para garantizar cero **Data Leakage**:
 - **Proximidad a Quincena:** `is_payday_window` y `days_to_next_payday`.
 - **Target Encodings Seguros:** Target encodings de `category` y `store_format` ajustados **únicamente en el split de TRAIN**.
 
+### 3.1 Selección de Features "Gap-Safe" (alineada al caso de uso real)
+
+El problema de negocio no es predecir *mañana* teniendo el dato de *hoy*: es predecir una **ventana de varios días consecutivos con `replenishment_signal` nula** al cierre de mes. Durante ese hueco, cualquier feature que dependa de datos *dentro* de la ventana (el `lag_1`, las medias móviles con `shift(1)`, los ratios sobre `amount_total_lag_1d`) **no existe**.
+
+Por eso el modelo evaluado usa únicamente features **gap-safe**: cuyo insumo más reciente tiene ≥ `GAP_HORIZON` (=7) días de antigüedad. En la práctica: features estáticas de tienda/calendario/target-encoding + `lag_7d / 14d / 28d`. Se **excluyen** `lag_1`, rolling `shift(1)` y ratios contemporáneos. Esto convierte la evaluación en un *forecast honesto a 7 días* en vez de una persistencia de 1 paso.
+
 ---
 
 ## 4. Estrategia de Validación y Resultados (WAPE, Impacto MXN)
@@ -46,12 +52,30 @@ Para garantizar cero **Data Leakage**:
 - **`VALIDATION` Split:** 2023-12-01 a 2024-01-31 (29,760 filas)
 - **`HOLDOUT` Split (Prueba a Ciegas):** 2024-02-01 a 2024-02-29 (13,920 filas)
 
-### Resultados de Evaluación
+### Tarea de evaluación
 
-| Modelo | WAPE (%) | RMSE | Costo de Sobrestock (MXN) | Costo de Quiebre (MXN) | Pérdida Total (MXN) | Ahorro vs Baseline (MXN) |
-|--------|----------|------|---------------------------|------------------------|---------------------|--------------------------|
-| **XGBoost Regressor** | **8.07%** | **218.30** | $25,470,071.06 | $35,372,784.88 | **$60,842,855.94 MXN** | **~$27.37M MXN** |
-| **LightGBM Regressor** | **9.38%** | **222.94** | $23,613,500.85 | $53,108,868.58 | **$76,722,369.43 MXN** | **~$34.52M MXN** |
+Forecast a **7 días** con features **gap-safe**, comparado contra un baseline **seasonal-naive (lag-7)** — el baseline justo para un hueco de ≤7 días (el `lag-1` no es utilizable ahí, ver §3.1). El baseline se calcula, no se inventa.
+
+### Resultados de Evaluación (VALIDATION)
+
+| Modelo | WAPE (%) | RMSE | Pérdida Total (MXN) |
+|--------|----------|------|---------------------|
+| **Baseline seasonal-naive (lag-7)** | **22.64%** | — | **$170.5M** |
+| LightGBM (gap-safe) | 32.62% | 406.62 | $244.1M |
+| XGBoost (gap-safe) | 37.26% | 503.14 | $244.5M |
+
+### Hallazgo honesto: el modelo aún NO supera al baseline
+
+En el escenario realista, **ambos GBM pierden contra el seasonal-naive** (ahorro real ≈ **–$73.6M MXN**). La razón es diagnosticada, no misteriosa: al remover `lag_1` (que en la versión anterior concentraba >90% de la importancia y **no existe** durante el hueco), el modelo se queda con `lag_7/14/28` + calendario e intenta reaprender lo que `lag_7` ya codifica, agregando ruido.
+
+> El WAPE de ~8% reportado en una iteración previa era un **espejismo de persistencia de 1 paso** apoyado en "el valor de ayer", más una métrica de ahorro con un factor arbitrario (`×0.45`). Ambos fueron **eliminados** por deshonestos. Se prefiere un resultado negativo auditable a una métrica inflada.
+
+**Próximo paso para superar el baseline** (features multi-step reales, pendiente en otra iteración):
+- Media estacional multi-semana (promedio de `lag_7, 14, 21, 28`) para suavizar el ruido del lag-7 único.
+- Rolling con `shift(7)` (media/std de las últimas 4 semanas, gap-safe).
+- Perfil `día-de-semana × categoría` y tendencia local.
+
+Un **gate de CI** (`savings_best_model_vs_naive_mxn >= 0`) quedará documentado en el plan MLOps para impedir que un modelo peor que el baseline llegue a producción.
 
 ---
 
@@ -63,3 +87,10 @@ Se utilizó el sistema agéntico **Antigravity AI** (Google DeepMind team) como 
 3. **Fase 3 (ML Pipeline):** Implementación de la arquitectura de Machine Learning sin data leakage, validación temporal y cálculo del impacto financiero en MXN.
 
 Todo el código generado fue validado mediante pruebas de ejecución automatizadas y auditoría fáctica con 0 alucinaciones (`outputs/audit_log.md`).
+
+### Herramientas de Apoyo al Flujo de Trabajo
+
+Además del agente principal, el desarrollo se apoyó en dos herramientas que dejan claro **de qué lado masca la iguana** 🦎 — cero over-engineering y trazabilidad total:
+
+- **graphify** (`/graphify`): convierte todo el repositorio (código, docs y figuras del EDA) en un **grafo de conocimiento** navegable con detección de comunidades y auditoría honesta de relaciones (EXTRACTED / INFERRED / AMBIGUOUS). Se usó para mapear las dependencias reales entre el pipeline de datos, la ingeniería de features y los agentes de EDA, y para responder preguntas sobre la arquitectura sin releer archivo por archivo. Sus salidas viven en `graphify-out/` (regenerables, por eso están en `.gitignore`).
+- **ponytail** (`/ponytail`): guardián anti-sobreingeniería. Fuerza la solución más simple que funciona — biblioteca estándar antes que dependencias, una línea antes que cincuenta, y cuestiona si el código siquiera necesita existir (YAGNI). Se aplicó para mantener el pipeline limpio y sin abstracciones especulativas.
